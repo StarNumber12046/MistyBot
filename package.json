@@ -33,7 +33,7 @@
     "@types/node": "^22.18.1",
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.3",
-    "ai": "^5.0.39",
+    "ai": "^5.0.52",
     "cheerio": "^1.1.2",
     "discord.js": "^14.22.1",
     "dotenv": "^16.6.1",
