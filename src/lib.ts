@@ -373,7 +373,7 @@ export async function genMistyOutput(
 
   try {
     const response = await generateText({
-      model: withTracing(googleClient("gemini-2.0-flash-lite"), posthogClient, {
+      model: withTracing(googleClient("gemini-2.5-flash"), posthogClient, {
         posthogProperties: {
           discordMessageId: latestMessage.id,
           $set: {
