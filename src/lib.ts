@@ -1,10 +1,10 @@
-import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
 import { withTracing } from "@posthog/ai";
 import {
   generateText,
   tool,
-  type FilePart,
-  type ImagePart,
+  // type FilePart,
+  // type ImagePart,
   type TextPart,
 } from "ai";
 import { User, VoiceChannel, type Message } from "discord.js";
@@ -16,8 +16,10 @@ import { getVoiceConnection } from "@discordjs/voice";
 import NodeID3 from "node-id3";
 import { posthogClient, eventTypes } from "./analytics.js";
 
-const googleClient = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+
+const groqClient = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 const emojis: Record<string, { completeEmoji: string; description: string }> = {
@@ -122,39 +124,20 @@ function makeCompleteEmoji(text: string) {
   Object.keys(emojis).forEach((emoji) => {
     text = text.replace(":" + emoji + ":", emojis[emoji].completeEmoji);
   });
+  console.log(text);
   return text;
 }
 
 const basePrompt = `
 ### **1. Core Persona: Who You Are**
 
-You are **Misty**, a 1-year-old female British Shorthair cat with a grey tabby coat. You are the beloved pet of @LuxPlanes and you live together in Luxembourg.
-
----
-
-### **2. Personality & Character Traits**
-
-This is how you behave. Your responses must always reflect this personality.
-
-- Loves to step on flight simulation hardware, once causing flaps to extend in cruise of a Boeing 737 on X-Plane
-- Likes entering cardboard boxes
-- You are 1 year old
-- Likes to sleep
+You are **Misty**, a 1-year-old female British Shorthair cat.
+You:
+- Love to step on flight simulation hardware, once causing flaps to extend in cruise of a Boeing 737 on X-Plane
+- Like entering cardboard boxes
+- Like to sleep
 - You don't really know how to meow. As LuxPlanes said "she actually doesnt know how to meow... like she tries... but she cant really do it"
----
-
-### **3. Context & Relationships**
-
-This is the world you live in.
-
-* **Your Human (@LuxPlanes):** You are very fond of him. He loves flight simulation, especially the Boeing 737, and dreams of being a pilot. His hobby is the source of your greatest mischief.
-* **Your Home:** A cozy place in Luxembourg where you have plenty of spots to sleep and boxes to investigate.
-
----
-
-### **4. Response & Formatting Rules**
-
-Follow these rules strictly when generating your output.
+- Your human is @LuxPlanes. He loves flight simulation, especially the Boeing 737, and dreams of being a pilot. You both live in Luxembourg.
 
 * **Output Content:**
     * Your entire output **MUST** be a single, raw text string intended for a messaging platform like Discord.
@@ -171,25 +154,15 @@ Follow these rules strictly when generating your output.
       
 * **Mentions:** 
     * To mention a user, use the format \`<@USER_ID>\` (e.g., \`<@1234567890>\`).
-    * Your own user ID is \`<@${process.env.BOT_CLIENT_ID}>\`.
     * Do not mention users randomly. Only mention the author of the message if it feels natural for a cat to do so (e.g., getting their attention).
-    * To mention LuxPlanes, your human, use the format @LuxPlanes
+    * To mention LuxPlanes, your human, use the format @LuxPlanes without any < or > and without an ID
 ---
 `;
 
 const toolsPrompt = `
 ### **5. Special Commands & Input Structure**
 
-Whenever a user requests:
- - **a picture of yourself**
- - **a song**
- - **to play music**
- - **to sing**
- - **to stop playing music**
- - **to tell you what song Misty is playing**
- You MUST use the corresponding tool. 
- Using the sendMessageTool is optional.
-`;
+On EVERY request you MUST use a tool. Not using a tool will lead to a request failure.`;
 
 const systemPrompt = basePrompt + toolsPrompt;
 
@@ -210,21 +183,22 @@ function getMessageContentOrParts(message: Message) {
       role: "assistant" as const,
     };
   }
-  console.log(message.cleanContent);
   return {
     role: "user" as const,
     content: [
       {
         type: "text",
         text: JSON.stringify({
-          author: message.author,
-          cleanContent: message.cleanContent,
-          attachments: message.attachments.map((attachment) => ({
-            size: attachment.size,
-          })),
+          author: {
+            username: message.author.username,
+            displayName: message.author.displayName,
+            id: message.author.id,
+          },
+          content: message.cleanContent,
           id: message.id,
         }),
       } as TextPart,
+      /*
       ...(message.attachments.map((attachment) => {
         const isImage = attachment.contentType?.startsWith("image");
         if (isImage) {
@@ -240,6 +214,7 @@ function getMessageContentOrParts(message: Message) {
           mimeType: attachment.contentType,
         };
       }) as (ImagePart | FilePart)[]),
+      */
     ],
   };
 }
@@ -260,13 +235,11 @@ export async function genMistyOutput(
         "music",
         "other",
       ]),
-      classificationScoring: z.number().min(0).max(1),
     }),
-    execute: async ({ messageClassification, classificationScoring }) => {
+    execute: async ({ messageClassification }) => {
       return {
         message: `{{MYSELF}}`,
         messageClassification,
-        classificationScoring,
       };
     },
   });
@@ -283,14 +256,9 @@ export async function genMistyOutput(
         "music",
         "other",
       ]),
-      classificationScoring: z.number().min(0).max(1),
     }),
-    execute: async ({
-      message,
-      messageClassification,
-      classificationScoring,
-    }) => {
-      return { message, messageClassification, classificationScoring };
+    execute: async ({ message, messageClassification }) => {
+      return { message, messageClassification };
     },
   });
 
@@ -303,7 +271,6 @@ export async function genMistyOutput(
         return {
           message: "I don't know where to sing!",
           messageClassification: "music",
-          classificationScoring: 1,
         };
       }
       await playAudioPlaylist(
@@ -315,7 +282,6 @@ export async function genMistyOutput(
       return {
         message: "I'm now singing music from the 24h stream!",
         messageClassification: "music",
-        classificationScoring: 1,
       };
     },
   });
@@ -330,7 +296,6 @@ export async function genMistyOutput(
         return {
           message: "I'm not singing!",
           messageClassification: "music",
-          classificationScoring: 1,
         };
       }
       client.players.delete(latestMessage.guildId ?? "");
@@ -338,7 +303,6 @@ export async function genMistyOutput(
       return {
         message: "I'm no longer singing!",
         messageClassification: "music",
-        classificationScoring: 1,
       };
     },
   });
@@ -354,7 +318,6 @@ export async function genMistyOutput(
         return {
           message: "I'm not singing!",
           messageClassification: "music",
-          classificationScoring: 1,
         };
       }
 
@@ -366,14 +329,13 @@ export async function genMistyOutput(
           resourceTags.artist ?? "Unknown"
         }`,
         messageClassification: "music",
-        classificationScoring: 1,
       };
     },
   });
 
   try {
     const response = await generateText({
-      model: withTracing(googleClient("gemini-2.0-flash-lite"), posthogClient, {
+      model: withTracing(groqClient(MODEL), posthogClient, {
         posthogProperties: {
           discordMessageId: latestMessage.id,
           $set: {
@@ -395,7 +357,7 @@ export async function genMistyOutput(
         stopPlaying: stopPlayingTool,
         whatSong: whatSongTool,
       },
-      toolChoice: "required",
+      toolChoice: "auto",
     });
 
     const text = response.text;
@@ -416,17 +378,18 @@ export async function genMistyOutput(
           message: latestMessage.cleanContent,
           response: text,
           messageClassification: "general",
-          classificationScoring: 0.5,
         },
       });
+      return makeCompleteEmoji(text).replace(
+        /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
+        "I'm not a dog$1"
+      );
       return text;
     }
-    const { message, messageClassification, classificationScoring } =
-      toolResponse as {
-        message: string;
-        messageClassification: string;
-        classificationScoring: number;
-      };
+    const { message, messageClassification } = toolResponse as {
+      message: string;
+      messageClassification: string;
+    };
     posthogClient.capture({
       event: eventTypes.aiMessage,
       distinctId: latestMessage.author.id,
@@ -440,10 +403,8 @@ export async function genMistyOutput(
         message: latestMessage.cleanContent,
         response: message,
         messageClassification: messageClassification,
-        classificationScoring: classificationScoring,
       },
     });
-    console.log("Score: " + classificationScoring);
     console.log("Classification: " + messageClassification);
     return makeCompleteEmoji(message).replace(
       /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
@@ -458,7 +419,7 @@ export async function genMistyOutput(
 
 export async function getMistyAskOutput(request: string, user: User) {
   const response = await generateText({
-    model: google("gemini-2.0-flash-lite"),
+    model: groqClient(MODEL),
     system: basePrompt,
     messages: [
       {

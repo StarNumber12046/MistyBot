@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.13",
+    "@ai-sdk/groq": "^2.0.33",
     "@discordjs/voice": "^0.18.0",
     "@google/genai": "^0.14.1",
     "@libsql/client": "^0.15.15",
