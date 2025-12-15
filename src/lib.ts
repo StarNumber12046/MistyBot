@@ -170,15 +170,7 @@ console.log(systemPrompt);
 function getMessageContentOrParts(message: Message) {
   if (message.author.bot) {
     return {
-      content: JSON.stringify({
-        content: message.content,
-        author: message.author,
-        cleanContent: message.cleanContent,
-        attachments: message.attachments.map((attachment) => ({
-          size: attachment.size,
-        })),
-        id: message.id,
-      }),
+      content: message.cleanContent,
       role: "assistant" as const,
     };
   }
