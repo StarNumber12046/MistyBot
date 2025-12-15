@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { IMAGES_URL } from "~/config.js";
+import { IMAGES_URL } from "../../config.js";
 
 export default {
   data: new SlashCommandBuilder()

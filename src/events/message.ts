@@ -2,7 +2,7 @@ import { Message, type OmitPartialGroupDMChannel } from "discord.js";
 import type { ClientType } from "../types.js";
 import { genMistyOutput } from "../lib.js";
 import { ratelimit, redis } from "../utils/redis.js";
-import { IMAGES_URL } from "~/config.js";
+import { IMAGES_URL } from "../config.js";
 
 async function recursivelyFetchMessage(
   message: Message,
