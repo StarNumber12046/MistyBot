@@ -1,5 +1,7 @@
 export const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
+export const IMAGES_URL = "https://starnumber.lol/misty";
+
 export const emojis: Record<
   string,
   { completeEmoji: string; description: string }

@@ -2,6 +2,7 @@ import { Message, type OmitPartialGroupDMChannel } from "discord.js";
 import type { ClientType } from "../types.js";
 import { genMistyOutput } from "../lib.js";
 import { ratelimit, redis } from "../utils/redis.js";
+import { IMAGES_URL } from "~/config.js";
 
 async function recursivelyFetchMessage(
   message: Message,
@@ -98,7 +99,7 @@ export default {
     const output = await genMistyOutput(messages, client, message);
 
     if (output?.includes("{{MYSELF}}")) {
-      const imageResponse = await fetch("https://starnumber.lol/misty");
+      const imageResponse = await fetch(IMAGES_URL);
       const imageData = Buffer.from(await imageResponse.arrayBuffer());
       await message.reply({ files: [imageData] });
       return;
