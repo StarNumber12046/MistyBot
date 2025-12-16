@@ -43,12 +43,12 @@ const commandsFoldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(commandsFoldersPath);
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath);
-const modalsPath = path.join(__dirname, "modals");
-const modalFiles = fs.readdirSync(modalsPath);
+// const modalsPath = path.join(__dirname, "modals");
+// const modalFiles = fs.readdirSync(modalsPath);
 
 ratelimit.resetUsedTokens("1174713902454554688");
 
-for (const folder of commandFolders) {
+for (const folder of/ commandFolders) {
   const commandsPath = path.join(commandsFoldersPath, folder);
   const commandFiles = fs
     .readdirSync(commandsPath)
