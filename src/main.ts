@@ -48,7 +48,7 @@ const eventFiles = fs.readdirSync(eventsPath);
 
 ratelimit.resetUsedTokens("1174713902454554688");
 
-for (const folder of/ commandFolders) {
+for (const folder of commandFolders) {
   const commandsPath = path.join(commandsFoldersPath, folder);
   const commandFiles = fs
     .readdirSync(commandsPath)
