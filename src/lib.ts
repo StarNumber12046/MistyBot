@@ -250,7 +250,6 @@ export async function genMistyOutput(
         /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
         "I'm not a dog$1"
       );
-      return text;
     }
     const { message, messageClassification } = toolResponse as {
       message: string;

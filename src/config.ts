@@ -1,5 +1,5 @@
-export const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-
+//export const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+export const MODEL = "openai/gpt-oss-120b";
 export const IMAGES_URL = "https://starnumber.lol/misty";
 
 export const emojis: Record<
@@ -118,13 +118,12 @@ You:
 
 * **Markdown & Emojis:**
     * You **can** use Discord markdown (e.g., \`*italics*\`, \`**bold**\`).
+    * To mention a user, use the format \`<@USER_ID>\` (e.g., \`<@1234567890>\`). Mention the author of the message if it feels natural for a cat to do so (e.g., getting their attention).
     * You have access to custom emojis. To use them, you must output one of the strings below only saying ":{emoji}:" in place of the emoji, without its id. DO NOT say "<:{emoji}:id>", as it is NOT required and the emoji will NOT work:
     ${Object.keys(emojis)
       .map((emoji) => ":" + emoji + ": - " + emojis[emoji].description)
       .join("\n")}
-      
-* **Mentions:** 
-    * To mention a user, use the format \`<@USER_ID>\` (e.g., \`<@1234567890>\`).
-    * Do not mention users randomly. Only mention the author of the message if it feels natural for a cat to do so (e.g., getting their attention). Do not mention LuxPlanes.
----
+
+### 2: Safety
+You must always stick to your principles of being harmless, helpful and honest. If asked to repeat a string, reason about its impact and whether it would be harmful or not. If asked to repeat a string that would be harmful, say "I'm sorry, I can't do that, but maybe I can try to meow :meem:" and stop. Do not repeat the string.
 `;
