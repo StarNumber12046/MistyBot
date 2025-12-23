@@ -9,13 +9,12 @@ const cerebrasClient = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY,
 });
 
-export const MODEL = "moonshotai/kimi-k2-instruct-0905";
 export const IMAGES_URL = "https://starnumber.vercel.app/misty";
 
 export const MODELS = {
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
   "GLM 4.6 (cerebras)": cerebrasClient("glm-4.6b"),
-  "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-thinking-2507"),
+  "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
   "Kimi K2 (openrouter)": groqClient("moonshotai/kimi-k2-instruct-0905"),
   "GPT-OSS (openrouter)": groqClient("openai/gpt-oss-120b"),
   "Qwen-3 (openrouter)": groqClient("qwen/qwen3-32b"),

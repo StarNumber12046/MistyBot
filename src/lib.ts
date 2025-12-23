@@ -255,7 +255,7 @@ export async function genMistyOutput(
           messageClassification: "general",
         },
       });
-      return makeCompleteEmoji("[kimi] " + text).replace(
+      return makeCompleteEmoji(text).replace(
         /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
         "I'm not a dog$1"
       );
@@ -280,7 +280,7 @@ export async function genMistyOutput(
       },
     });
     console.log("Classification: " + messageClassification);
-    return makeCompleteEmoji("[kimi] " + message).replace(
+    return makeCompleteEmoji(message).replace(
       /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
       "I'm not a dog$1"
     );
