@@ -43,8 +43,8 @@ const commandsFoldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(commandsFoldersPath);
 const eventsPath = path.join(__dirname, "events");
 const eventFiles = fs.readdirSync(eventsPath);
-const modalsPath = path.join(__dirname, "modals");
-const modalFiles = fs.readdirSync(modalsPath);
+// const modalsPath = path.join(__dirname, "modals");
+// const modalFiles = fs.readdirSync(modalsPath);
 
 ratelimit.resetUsedTokens("1174713902454554688");
 
@@ -77,13 +77,13 @@ for (const file of eventFiles) {
   });
   client.events.set(event.eventType, event);
 }
-
+/*
 for (const modal of modalFiles) {
   const filePath = new URL("file://" + path.join(modalsPath, modal));
   const modalModule = (await import(filePath.toString())).default as ModalType;
   client.modals.set(modalModule.modalId, modalModule);
 }
-
+*/
 async function playMeowOnGuilds() {
   const guilds = client.guilds.cache.filter(
     (guild) => guild.members.cache.filter((member) => member.user.bot).size > 0
