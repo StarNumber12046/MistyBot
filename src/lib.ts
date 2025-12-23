@@ -1,14 +1,12 @@
-import { createGroq } from "@ai-sdk/groq";
-import { withTracing } from "@posthog/ai";
+// import { withTracing } from "@posthog/ai";
 import {
   generateText,
   tool,
-  type ImagePart,
   // type FilePart,
   // type ImagePart,
   type TextPart,
 } from "ai";
-import { basePrompt, emojis, MODEL } from "./config.js";
+import { basePrompt, DEFAULT_MODEL, emojis, MODELS } from "./config.js";
 import { User, VoiceChannel, type Message } from "discord.js";
 import { z } from "zod/v3";
 import type { ClientType } from "./types.js";
@@ -17,10 +15,7 @@ import { playAudioPlaylist } from "./utils/voice.js";
 import { getVoiceConnection } from "@discordjs/voice";
 import NodeID3 from "node-id3";
 import { posthogClient, eventTypes } from "./analytics.js";
-
-const groqClient = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+import { redis } from "./utils/redis.js";
 
 function makeCompleteEmoji(text: string) {
   // Replace anything matching <:emoji:id> with :emoji:
@@ -66,23 +61,32 @@ function getMessageContentOrParts(message: Message) {
         }),
       } as TextPart,
 
-      ...(message.attachments.map((attachment) => {
-        const isImage = attachment.contentType?.startsWith("image");
-        if (isImage) {
-          return {
-            type: "image",
-            image: attachment.url,
-            mimeType: attachment.contentType,
-          };
-        }
-        // return {
-        //   type: isImage ? "image" : "file",
-        //   data: attachment.url,
-        //   mimeType: attachment.contentType,
-        // };
-      }) as ImagePart[]),
+      // ...(message.attachments.map((attachment) => {
+      // const isImage = attachment.contentType?.startsWith("image");
+      // if (isImage) {
+      // return {
+      // type: "image",
+      // image: attachment.url,
+      // mimeType: attachment.contentType,
+      // };
+      // }
+      // return {
+      // type: isImage ? "image" : "file",
+      // data: attachment.url,
+      // mimeType: attachment.contentType,
+      // };
+      // }) as ImagePart[]),
     ],
   };
+}
+
+async function getUserPreferredModel(user: User) {
+  const userModel: string =
+    (await redis.get(`user:${user.id}:model`)) ?? DEFAULT_MODEL;
+  if (userModel && userModel in MODELS) {
+    return MODELS[userModel as keyof typeof MODELS];
+  }
+  return MODELS[DEFAULT_MODEL];
 }
 
 export async function genMistyOutput(
@@ -201,17 +205,22 @@ export async function genMistyOutput(
 
   try {
     const response = await generateText({
-      model: withTracing(groqClient(MODEL), posthogClient, {
-        posthogProperties: {
-          discordMessageId: latestMessage.id,
-          $set: {
-            name: latestMessage.author.username,
-            displayName: latestMessage.author.displayName,
-            avatar: latestMessage.author.avatarURL(),
-            userId: latestMessage.author.id,
-          },
-        },
-      }),
+      // model: withTracing(
+      //   await getUserPreferredModel(latestMessage.author),
+      //   posthogClient,
+      //   {
+      //     posthogProperties: {
+      //       discordMessageId: latestMessage.id,
+      //       $set: {
+      //         name: latestMessage.author.username,
+      //         displayName: latestMessage.author.displayName,
+      //         avatar: latestMessage.author.avatarURL(),
+      //         userId: latestMessage.author.id,
+      //       },
+      //     },
+      //   }
+      // ),
+      model: await getUserPreferredModel(latestMessage.author),
       system: systemPrompt,
       messages: messages
         .reverse()
@@ -246,7 +255,7 @@ export async function genMistyOutput(
           messageClassification: "general",
         },
       });
-      return makeCompleteEmoji(text).replace(
+      return makeCompleteEmoji("[kimi] " + text).replace(
         /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
         "I'm not a dog$1"
       );
@@ -271,7 +280,7 @@ export async function genMistyOutput(
       },
     });
     console.log("Classification: " + messageClassification);
-    return makeCompleteEmoji(message).replace(
+    return makeCompleteEmoji("[kimi] " + message).replace(
       /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
       "I'm not a dog$1"
     );
@@ -284,7 +293,7 @@ export async function genMistyOutput(
 
 export async function getMistyAskOutput(request: string, user: User) {
   const response = await generateText({
-    model: groqClient(MODEL),
+    model: MODELS[DEFAULT_MODEL],
     system: basePrompt,
     messages: [
       {
@@ -297,17 +306,11 @@ export async function getMistyAskOutput(request: string, user: User) {
       {
         role: "user",
 
-        content: [
-          {
-            type: "text",
-
-            text: JSON.stringify({
-              author: user,
-              cleanContent: request,
-              id: user.id,
-            }),
-          },
-        ],
+        content: JSON.stringify({
+          author: user,
+          cleanContent: request,
+          id: user.id,
+        }),
       },
     ],
   });
