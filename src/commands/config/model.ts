@@ -8,7 +8,7 @@ import { MODELS } from "../../config.js";
 
 export default {
   data: new SlashCommandBuilder()
-    .setName("blacklist")
+    .setName("model")
     .addStringOption((option) =>
       option
         .setName("model")
