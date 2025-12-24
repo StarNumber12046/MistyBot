@@ -23,7 +23,7 @@ function makeCompleteEmoji(text: string) {
     return `:${emoji}:`;
   });
   Object.keys(emojis).forEach((emoji) => {
-    text = text.replace(":" + emoji + ":", emojis[emoji].completeEmoji);
+    text = text.replaceAll(":" + emoji + ":", emojis[emoji].completeEmoji);
   });
   console.log(text);
   return text;
