@@ -15,12 +15,12 @@ export const MODELS = {
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
   "GLM 4.6 (cerebras)": cerebrasClient("glm-4.6b"),
   "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
-  "Kimi K2 (openrouter)": groqClient("moonshotai/kimi-k2-instruct-0905"),
-  "GPT-OSS (openrouter)": groqClient("openai/gpt-oss-120b"),
-  "Qwen-3 (openrouter)": groqClient("qwen/qwen3-32b"),
+  "Kimi K2 (groq)": groqClient("moonshotai/kimi-k2-instruct-0905"),
+  "GPT-OSS (groq)": groqClient("openai/gpt-oss-120b"),
+  "Qwen-3 (groq)": groqClient("qwen/qwen3-32b"),
 };
 
-export const DEFAULT_MODEL = "GPT-OSS (openrouter)";
+export const DEFAULT_MODEL = "GPT-OSS (groq)";
 
 export const emojis: Record<
   string,
