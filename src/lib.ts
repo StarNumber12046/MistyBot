@@ -1,4 +1,4 @@
-// import { withTracing } from "@posthog/ai";
+import { withTracing } from "@posthog/ai";
 import {
   generateText,
   tool,
@@ -205,22 +205,21 @@ export async function genMistyOutput(
 
   try {
     const response = await generateText({
-      // model: withTracing(
-      //   await getUserPreferredModel(latestMessage.author),
-      //   posthogClient,
-      //   {
-      //     posthogProperties: {
-      //       discordMessageId: latestMessage.id,
-      //       $set: {
-      //         name: latestMessage.author.username,
-      //         displayName: latestMessage.author.displayName,
-      //         avatar: latestMessage.author.avatarURL(),
-      //         userId: latestMessage.author.id,
-      //       },
-      //     },
-      //   }
-      // ),
-      model: await getUserPreferredModel(latestMessage.author),
+      model: withTracing(
+        await getUserPreferredModel(latestMessage.author),
+        posthogClient,
+        {
+          posthogProperties: {
+            discordMessageId: latestMessage.id,
+            $set: {
+              name: latestMessage.author.username,
+              displayName: latestMessage.author.displayName,
+              avatar: latestMessage.author.avatarURL(),
+              userId: latestMessage.author.id,
+            },
+          },
+        }
+      ),
       system: systemPrompt,
       messages: messages
         .reverse()
