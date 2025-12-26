@@ -209,6 +209,7 @@ export async function genMistyOutput(
         await getUserPreferredModel(latestMessage.author),
         posthogClient,
         {
+          posthogDistinctId: latestMessage.author.id,
           posthogProperties: {
             discordMessageId: latestMessage.id,
             $set: {
@@ -273,6 +274,7 @@ export async function genMistyOutput(
           avatar: latestMessage.author.avatarURL(),
           userId: latestMessage.author.id,
         },
+        distinct_id: latestMessage.author.id,
         message: latestMessage.cleanContent,
         response: message,
         messageClassification: messageClassification,
@@ -292,7 +294,17 @@ export async function genMistyOutput(
 
 export async function getMistyAskOutput(request: string, user: User) {
   const response = await generateText({
-    model: MODELS[DEFAULT_MODEL],
+    model: withTracing(await getUserPreferredModel(user), posthogClient, {
+      posthogDistinctId: user.id,
+      posthogProperties: {
+        $set: {
+          name: user.username,
+          displayName: user.displayName,
+          avatar: user.avatarURL(),
+          userId: user.id,
+        },
+      },
+    }),
     system: basePrompt,
     messages: [
       {
