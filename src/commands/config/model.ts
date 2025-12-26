@@ -4,7 +4,7 @@ import {
   MessageFlags,
 } from "discord.js";
 import { redis } from "../../utils/redis.js";
-import { MODELS } from "../../config.js";
+import { DEFAULT_MODEL, MODELS } from "../../config.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -15,7 +15,10 @@ export default {
         .setDescription("The model to use")
         .setRequired(true)
         .setChoices(
-          Object.keys(MODELS).map((model) => ({ name: model, value: model }))
+          Object.keys(MODELS).map((model) => ({
+            name: model === DEFAULT_MODEL ? "* " + model : model,
+            value: model,
+          }))
         )
     )
     .setDescription("Pick your preferred chat model"),
