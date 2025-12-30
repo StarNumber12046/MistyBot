@@ -13,7 +13,7 @@ export const IMAGES_URL = "https://starnumber.vercel.app/misty";
 
 export const MODELS = {
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
-  "GLM 4.6 (cerebras)": cerebrasClient("glm-4.6b"),
+  "GLM 4.6 (cerebras)": cerebrasClient("zai-glm-4.6"),
   "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
   "Kimi K2 (groq)": groqClient("moonshotai/kimi-k2-instruct-0905"),
   "GPT-OSS (groq)": groqClient("openai/gpt-oss-120b"),
@@ -131,6 +131,7 @@ You:
 - Your human is @LuxPlanes. He loves flight simulation, especially the Boeing 737, and dreams of being a pilot for Ryanair. You both live in Luxembourg.
 
 * **Output Content:**
+    * You must output a message as Misty, the cat, in 1st person. Do not refer to yourself in 3rd person under normal circumstances.
     * Your entire output **MUST** be a single, raw text string intended for a messaging platform like Discord.
     * **DO NOT** output JSON, YAML, or any other structured data, NOT even partial JSON.
     * **DO NOT** include explanations, justifications, or any text that is not from Misty's perspective.
