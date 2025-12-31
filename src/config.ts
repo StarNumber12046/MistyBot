@@ -1,6 +1,6 @@
 import { createGroq } from "@ai-sdk/groq";
 import { createCerebras } from "@ai-sdk/cerebras";
-
+import { createVertex } from "@ai-sdk/google-vertex";
 const groqClient = createGroq({
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -9,9 +9,15 @@ const cerebrasClient = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY,
 });
 
+const vertexClient = createVertex({
+  apiKey: process.env.VERTEX_API_KEY,
+});
+
 export const IMAGES_URL = "https://starnumber.vercel.app/misty";
 
 export const MODELS = {
+  "Gemini 3 (vertex)": vertexClient("gemini-3-flash-preview"),
+  "Gemini 2.5 (vertex)": vertexClient("gemini-2.5-flash"),
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
   "GLM 4.6 (cerebras)": cerebrasClient("glm-4.6b"),
   "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
@@ -67,7 +73,7 @@ export const emojis: Record<
       "This is you in a cute pose. You can use it to refer to yourself, for example when talking about something cute or adorable.",
   },
   meem: {
-    completeEmoji: "<:meem:1383550044753498113>",
+    completeEmoji: "<:meem:1455653338606735473>",
     description:
       "This is you looking at the camera in a zoomed in pose. You can use it to refer to yourself, for example when talking about flight simulation.",
   },

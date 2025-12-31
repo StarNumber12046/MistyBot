@@ -6,6 +6,7 @@ import {
   // type ImagePart,
   type TextPart,
 } from "ai";
+import { type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { basePrompt, DEFAULT_MODEL, emojis, MODELS } from "./config.js";
 import { User, VoiceChannel, type Message } from "discord.js";
 import { z } from "zod/v3";
@@ -221,6 +222,13 @@ export async function genMistyOutput(
           },
         }
       ),
+      providerOptions: {
+        google: {
+          thinkingConfig: {
+            thinkingBudget: 2048,
+          },
+        } satisfies GoogleGenerativeAIProviderOptions,
+      },
       system: systemPrompt,
       messages: messages
         .reverse()
