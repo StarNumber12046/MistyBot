@@ -69,31 +69,6 @@ const rest = new REST().setToken(env.BOT_TOKEN ?? "");
       Routes.applicationCommands(env.BOT_CLIENT_ID ?? ""),
       { body: commands }
     );
-    const getCommandsData = await rest.get(
-      Routes.applicationGuildCommands(
-        env.BOT_CLIENT_ID ?? "",
-        env.BOT_GUILD_ID ?? ""
-      ),
-      { body: commands }
-    );
-    console.log(getCommandsData);
-    const commandsData = getCommandsData as {
-      id: string;
-      application_id: string;
-      name: string;
-    }[];
-    commandsData.forEach(async (command) => {
-      await rest.delete(
-        Routes.applicationGuildCommand(
-          command.application_id,
-          env.BOT_GUILD_ID ?? "",
-          command.id
-        )
-      );
-      console.log(
-        `Successfully deleted command ${command.name} from guild ${env.BOT_GUILD_ID}`
-      );
-    });
     console.log(
       `Successfully reloaded ${
         (data as unknown[]).length
