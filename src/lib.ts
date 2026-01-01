@@ -228,6 +228,14 @@ export async function genMistyOutput(
             thinkingBudget: 2048,
           },
         } satisfies GoogleGenerativeAIProviderOptions,
+        anthropic: {
+          thinkingConfig: {
+            thinkingBudget: 2048,
+          },
+        },
+        bedrock: {
+          reasoningConfig: { type: "enabled", budgetTokens: 2048 },
+        },
       },
       system: systemPrompt,
       messages: messages

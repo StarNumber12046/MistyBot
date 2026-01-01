@@ -24,6 +24,7 @@
     "typescript-eslint": "^8.50.1"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^4.0.4",
     "@ai-sdk/cerebras": "^2.0.2",
     "@ai-sdk/google": "^3.0.2",
     "@ai-sdk/google-vertex": "^4.0.2",

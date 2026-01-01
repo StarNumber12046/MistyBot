@@ -1,6 +1,7 @@
 import { createGroq } from "@ai-sdk/groq";
 import { createCerebras } from "@ai-sdk/cerebras";
 import { createVertex } from "@ai-sdk/google-vertex";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 const groqClient = createGroq({
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -13,11 +14,21 @@ const vertexClient = createVertex({
   apiKey: process.env.VERTEX_API_KEY,
 });
 
+const bedrockClient = createAmazonBedrock({
+  apiKey: process.env.BEDROCK_API_KEY,
+});
+
 export const IMAGES_URL = "https://starnumber.vercel.app/misty";
 
 export const MODELS = {
   "Gemini 3 (vertex)": vertexClient("gemini-3-flash-preview"),
   "Gemini 2.5 (vertex)": vertexClient("gemini-2.5-flash"),
+  "Claude Sonnet 4.5 (bedrock)": bedrockClient(
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+  ),
+  "Claude Sonnet 4 (bedrock)": bedrockClient(
+    "global.anthropic.claude-sonnet-4-20250514-v1:0"
+  ),
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
   "GLM 4.6 (cerebras)": cerebrasClient("zai-glm-4.6"),
   "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
