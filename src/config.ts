@@ -29,7 +29,7 @@ export const MODELS = {
   "Claude Sonnet 4 (bedrock)": bedrockClient(
     "global.anthropic.claude-sonnet-4-20250514-v1:0"
   ),
-  "Deepseek v3.1 (bedrock)": bedrockClient("global.deepseek.v3-v1:0"),
+  "Deepseek r1 (bedrock)": bedrockClient("deepseek.v3-v1:0"),
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
   "GLM 4.6 (cerebras)": cerebrasClient("zai-glm-4.6"),
   "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
