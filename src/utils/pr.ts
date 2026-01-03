@@ -11,42 +11,18 @@ interface PullRequestParams {
   baseBranch: string;
   filePath: string;
   editFn: (currentContent: string) => string;
-  prTitle: string;
-  prBody: string;
   commitMessage: string;
-  branchPrefix?: string;
 }
 
-export async function createPullRequestWithFileEdit({
+export async function editFile({
   owner,
   repo,
   baseBranch,
   filePath,
   editFn,
-  prTitle,
-  prBody,
   commitMessage,
-  branchPrefix = "add-misty",
 }: PullRequestParams): Promise<boolean> {
-  const newBranch = `${branchPrefix}-${Date.now()}`;
-
   try {
-    // 1. Get latest commit SHA
-    const refData = await octokit.git.getRef({
-      owner,
-      repo,
-      ref: `heads/${baseBranch}`,
-    });
-    const baseSha = refData.data.object.sha;
-
-    // 2. Create new branch
-    await octokit.git.createRef({
-      owner,
-      repo,
-      ref: `refs/heads/${newBranch}`,
-      sha: baseSha,
-    });
-
     // 3. Get file content
     const fileRes = await octokit.repos.getContent({
       owner,
@@ -77,23 +53,11 @@ export async function createPullRequestWithFileEdit({
       message: commitMessage,
       content: Buffer.from(updatedContent).toString("base64"),
       sha: fileRes.data.sha,
-      branch: newBranch,
+      branch: "main",
     });
-
-    // 5. Create PR
-    const pr = await octokit.pulls.create({
-      owner,
-      repo,
-      title: prTitle,
-      head: newBranch,
-      base: baseBranch,
-      body: prBody,
-    });
-
-    console.log(`✅ PR created: ${pr.data.html_url}`);
     return true;
   } catch (error) {
-    console.error("❌ Failed to create PR:", (error as Error).message || error);
+    console.error("❌ Failed to update:", (error as Error).message || error);
     return false;
   }
 }

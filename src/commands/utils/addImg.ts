@@ -4,7 +4,7 @@ import {
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from "discord.js";
-import { createPullRequestWithFileEdit } from "../../utils/pr.js";
+import { editFile } from "../../utils/pr.js";
 import { uploadUrl } from "../../utils/ut.js";
 
 export function appendUrlsToRedirectArray(
@@ -58,12 +58,14 @@ export default {
     .setName("Add Misty Image")
     .setType(ApplicationCommandType.Message),
   async execute(interaction: MessageContextMenuCommandInteraction) {
-    const {
-      attachments,
-      id: messageId,
-      url: messageUrl,
-    } = interaction.targetMessage;
+    const { attachments, id: messageId } = interaction.targetMessage;
     await interaction.deferReply();
+    if (interaction.user.id !== process.env.OWNER_ID) {
+      return interaction.followUp({
+        content: "You are not the owner of this bot",
+        ephemeral: true,
+      });
+    }
     if (attachments.size === 0) {
       return interaction.followUp({
         content: "No image found in the message",
@@ -84,7 +86,7 @@ export default {
         ephemeral: true,
       });
     }
-    const success = await createPullRequestWithFileEdit({
+    const success = await editFile({
       owner: "StarNumber12046",
       repo: "starnumber12046.github.io",
       baseBranch: "main",
@@ -92,24 +94,16 @@ export default {
       editFn: appendUrlsToRedirectArray(
         attachmentUrls.filter((url) => url != undefined)
       ),
-      prTitle: "Add Misty Images from " + messageId,
-      prBody: `This PR adds Misty images from ${messageUrl}.\n# Added Images\n${attachmentUrls
-        .map((url) => `- ${url}`)
-        .join(
-          "\n"
-        )}\n\nNote: This PR is automatically created by the Misty bot. This interaction was created by @${
-        interaction.user.username
-      }`,
       commitMessage: "Add Misty Images from " + messageId,
     });
     if (success) {
       await interaction.followUp({
-        content: "PR created successfully",
+        content: "Updated successfully",
         flags: MessageFlags.Ephemeral,
       });
     } else {
       await interaction.followUp({
-        content: "Failed to create PR",
+        content: "Failed to update file",
         flags: MessageFlags.Ephemeral,
       });
     }
