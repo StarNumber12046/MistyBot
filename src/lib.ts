@@ -39,27 +39,27 @@ function makeCompleteEmoji(text: string) {
 }
 
 async function scrutinizeMessage(aiText: string) {
-  return (
-    await generateText({
-      model: MODERATION_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: MODERATION_PROMPT,
-        },
-        {
-          role: "user",
-          content: aiText,
-        },
-      ],
-      output: Output.object({
-        schema: z.object({
-          safe: z.boolean(),
-          message: z.string().optional(),
-        }),
+  const scrutinizedMessage = await generateText({
+    model: MODERATION_MODEL,
+    messages: [
+      {
+        role: "system",
+        content: MODERATION_PROMPT,
+      },
+      {
+        role: "user",
+        content: aiText,
+      },
+    ],
+    output: Output.object({
+      schema: z.object({
+        safe: z.boolean(),
+        message: z.string().optional(),
       }),
-    })
-  ).output;
+    }),
+  });
+  console.log("out:", scrutinizedMessage.output);
+  return scrutinizedMessage.output;
 }
 
 const toolsPrompt = `
