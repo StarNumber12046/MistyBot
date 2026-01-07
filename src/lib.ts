@@ -1,13 +1,21 @@
 import { withTracing } from "@posthog/ai";
 import {
   generateText,
+  Output,
   tool,
   // type FilePart,
   // type ImagePart,
   type TextPart,
 } from "ai";
 import { type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
-import { basePrompt, DEFAULT_MODEL, emojis, MODELS } from "./config.js";
+import {
+  basePrompt,
+  DEFAULT_MODEL,
+  emojis,
+  MODELS,
+  MODERATION_MODEL,
+  MODERATION_PROMPT,
+} from "./config.js";
 import { User, VoiceChannel, type Message } from "discord.js";
 import { z } from "zod/v3";
 import type { ClientType } from "./types.js";
@@ -28,6 +36,30 @@ function makeCompleteEmoji(text: string) {
   });
   console.log(text);
   return text;
+}
+
+async function scrutinizeMessage(aiText: string) {
+  return (
+    await generateText({
+      model: MODERATION_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: MODERATION_PROMPT,
+        },
+        {
+          role: "user",
+          content: aiText,
+        },
+      ],
+      output: Output.object({
+        schema: z.object({
+          safe: z.boolean(),
+          message: z.string().optional(),
+        }),
+      }),
+    })
+  ).output;
 }
 
 const toolsPrompt = `
@@ -253,6 +285,7 @@ export async function genMistyOutput(
 
     const text = response.text;
     const toolResponse = response.toolResults[0]?.output;
+    let outputText = "";
     if (!toolResponse) {
       posthogClient.capture({
         event: eventTypes.aiMessage,
@@ -271,7 +304,7 @@ export async function genMistyOutput(
           messageClassification: "general",
         },
       });
-      return makeCompleteEmoji(text).replace(
+      outputText = makeCompleteEmoji(text).replace(
         /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
         "I'm not a dog$1"
       );
@@ -297,10 +330,21 @@ export async function genMistyOutput(
       },
     });
     console.log("Classification: " + messageClassification);
-    return makeCompleteEmoji(message).replace(
+    outputText = makeCompleteEmoji(message).replace(
       /\b(?:i(?:['’])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
       "I'm not a dog$1"
     );
+    const userUnderScrutiny = await redis.get(
+      `scrutiny:${latestMessage.author.id}`
+    );
+    if (userUnderScrutiny) {
+      const scrutinyResponse = await scrutinizeMessage(outputText);
+      if (scrutinyResponse.safe) {
+        return outputText;
+      }
+      return scrutinyResponse.message;
+    }
+    return outputText;
   } catch (error) {
     console.log(error);
     console.log(JSON.stringify(error));

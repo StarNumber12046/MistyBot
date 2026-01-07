@@ -40,6 +40,16 @@ export const MODELS = {
 
 export const DEFAULT_MODEL = "GPT-OSS (groq)";
 
+export const MODERATION_MODEL = groqClient("openai/gpt-oss-safeguard-120b");
+
+export const UNSAFE_WORDS = ["fuck", "shit", "bitch", "cum", "goon"];
+
+export const MODERATION_PROMPT = `
+You must classify messages below as safe or unsafe. Only reply with a the following schema: {safe: boolean, message: string?}. The "message" property must be a rejection message if safe is false. Important (unsafe) words to pay attention to are: ${UNSAFE_WORDS.join(
+  ", "
+)}.
+`;
+
 export const emojis: Record<
   string,
   { completeEmoji: string; description: string }
