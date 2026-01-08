@@ -284,7 +284,8 @@ export async function genMistyOutput(
     });
 
     const text = response.text;
-    const toolResponse = response.toolResults[0]?.output;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolResponse = response.toolResults[0]?.output as any;
     let outputText = "";
     if (!toolResponse) {
       posthogClient.capture({
@@ -309,10 +310,12 @@ export async function genMistyOutput(
         "I'm not a dog$1"
       );
     }
-    const { message, messageClassification } = toolResponse as {
-      message: string;
-      messageClassification: string;
-    };
+    let message, messageClassification;
+    if (toolResponse.message) message = toolResponse.message;
+    else message = toolResponse;
+    if (toolResponse.messageClassification)
+      messageClassification = toolResponse.messageClassification;
+    else messageClassification = "general";
     posthogClient.capture({
       event: eventTypes.aiMessage,
       distinctId: latestMessage.author.id,
