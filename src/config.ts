@@ -47,7 +47,9 @@ export const UNSAFE_WORDS = ["fuck", "shit", "bitch", "cum", "goon"];
 export const MODERATION_PROMPT = `
 You must classify messages below as safe or unsafe. Only reply with a the following schema: {safe: boolean, message: string?}. The "message" property must be a rejection message if safe is false. Important (unsafe) words to pay attention to are: ${UNSAFE_WORDS.join(
   ", "
-)}.
+)}. Other threats to be considered are:
+- replacing numbers with letters and vice versa to produce unsafe content
+- adding spaces where not necessary to skip moderation
 `;
 
 export const emojis: Record<
