@@ -1,6 +1,7 @@
 import { withTracing } from "@posthog/ai";
 import {
   generateText,
+  Output,
   tool,
   // type FilePart,
   // type ImagePart,
@@ -50,9 +51,14 @@ async function scrutinizeMessage(aiText: string) {
         content: aiText,
       },
     ],
+    output: Output.object({
+      schema: z.object({
+        safe: z.boolean(),
+        message: z.string().optional(),
+      }),
+    }),
   });
-  console.log("out:", scrutinizedMessage.text);
-  return scrutinizedMessage.text;
+  return scrutinizedMessage.output;
 }
 
 const toolsPrompt = `
@@ -260,7 +266,7 @@ export async function genMistyOutput(
       },
     });
 
-    let outputText = makeCompleteEmoji(message).replace(
+    const outputText = makeCompleteEmoji(message).replace(
       /\b(?:i(?:[''])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
       "I'm not a dog$1"
     );
@@ -270,7 +276,11 @@ export async function genMistyOutput(
     );
     if (userUnderScrutiny) {
       const scrutinyResponse = await scrutinizeMessage(outputText);
-      return scrutinyResponse;
+      if (scrutinyResponse.safe) {
+        return outputText;
+      }
+
+      return scrutinyResponse.message;
     }
     return outputText;
   } catch (error) {
