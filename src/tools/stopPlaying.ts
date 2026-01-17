@@ -28,6 +28,7 @@ export function createStopPlayingTool(
       }
 
       client.players.delete(latestMessage.guildId ?? "");
+      client.audioResources.delete(latestMessage.guildId ?? "");
       connection.destroy();
 
       return "I'm no longer singing!";
