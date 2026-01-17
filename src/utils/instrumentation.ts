@@ -1,16 +1,22 @@
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
-import { ATTR_SERVICE_NAME, SEMRESATTRS_DEPLOYMENT_ENVIRONMENT } from "@opentelemetry/semantic-conventions";
+import {
+  ATTR_SERVICE_NAME,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+} from "@opentelemetry/semantic-conventions";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { LoggerProvider, BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
+import {
+  LoggerProvider,
+  BatchLogRecordProcessor,
+} from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
 import { env } from "process";
 import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 
 // ...
-diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
 
 const exporterConfig = {
   url: `https://${env.AXIOM_DOMAIN}/v1/traces`,

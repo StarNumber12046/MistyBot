@@ -1,4 +1,5 @@
 // IMPORTANT: Instrumentation must be imported first to initialize OpenTelemetry
+import "dotenv/config";
 import "./utils/instrumentation.js";
 
 import {
@@ -11,7 +12,6 @@ import {
 import fs from "fs";
 import path from "path";
 
-import dotenv from "dotenv";
 import type { ClientType, EventType, CommandType } from "./types.js";
 import { fileURLToPath } from "url";
 import { getVoiceChannels, hasMembers, playAudio } from "./utils/voice.js";
@@ -21,8 +21,6 @@ import { logger } from "./utils/logger.js";
 // import { askLimit } from "./utils/redis.js";
 
 console.log("Starting up Misty");
-
-dotenv.config();
 
 logger.logSystemStartup();
 const __filename = fileURLToPath(import.meta.url);
@@ -283,7 +281,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       },
     });
     try {
-      modalModule.execute(client, interaction);
+      await modalModule.execute(client, interaction);
       logger.logCommandSuccess(interaction, Date.now() - startTime);
     } catch (error) {
       const durationMs = Date.now() - startTime;

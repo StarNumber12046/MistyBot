@@ -7,7 +7,7 @@ import { logger } from "../utils/logger.js";
 
 async function recursivelyFetchMessage(
   message: Message,
-  limit: number
+  limit: number,
 ): Promise<Message[]> {
   const messages: Message[] = [message];
   let currentMessage = message;
@@ -15,7 +15,7 @@ async function recursivelyFetchMessage(
 
   while (currentMessage.reference?.messageId && count < limit) {
     const nextMessage = await currentMessage.channel.messages.fetch(
-      currentMessage.reference.messageId
+      currentMessage.reference.messageId,
     );
     if (
       nextMessage.content.length === 0 &&
@@ -44,7 +44,7 @@ async function handleAircraftGuess(message: Message, client: ClientType) {
   guessGame.guesses.push(message);
   if (guess.toUpperCase() === guessGame.icaoCode.toUpperCase()) {
     await guessGame.originalMessage.reply(
-      `<@${message.author.id}> guessed the aircraft after ${guessGame.guesses.length} guesses!\nThe aircraft was ${guessGame.icaoCode}\n-# By the way, the registration was ${guessGame.registration}`
+      `<@${message.author.id}> guessed the aircraft after ${guessGame.guesses.length} guesses!\nThe aircraft was ${guessGame.icaoCode}\n-# By the way, the registration was ${guessGame.registration}`,
     );
     client.guessGames.delete(message.channel.id);
     await message.channel.delete();
@@ -57,7 +57,7 @@ export default {
   eventType: "messageCreate",
   async execute(
     client: ClientType,
-    message: OmitPartialGroupDMChannel<Message<boolean>>
+    message: OmitPartialGroupDMChannel<Message<boolean>>,
   ) {
     const startTime = Date.now();
 
@@ -85,7 +85,10 @@ export default {
       !message.content.includes(`<@${client.user?.id}>`) &&
       completeMessageReference?.author.id !== client.user?.id
     ) {
-      logger.logMessageIgnored(message, "bot not mentioned and not a reply to bot");
+      logger.logMessageIgnored(
+        message,
+        "bot not mentioned and not a reply to bot",
+      );
       return;
     }
 
@@ -96,14 +99,16 @@ export default {
       return;
     }
 
-    const { success, reset, remaining, limit } = await ratelimit.limit(message.author.id);
+    const { success, reset, remaining, limit } = await ratelimit.limit(
+      message.author.id,
+    );
 
     logger.logRateLimitCheck(message.author.id, remaining ?? 0, limit);
 
     if (!success) {
       logger.logRateLimitExceeded(message.author.id, limit);
       return await message.reply(
-        `You ran out of messages! Retry <t:${Math.floor(reset / 1000)}:R>`
+        `You ran out of messages! Retry <t:${Math.floor(reset / 1000)}:R>`,
       );
     }
 

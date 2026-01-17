@@ -8,6 +8,7 @@ import type {
   MessageContextMenuCommandInteraction,
   ModalSubmitInteraction,
 } from "discord.js";
+import { env } from "process";
 
 // ============================================================================
 // Attribute Interfaces
@@ -91,7 +92,7 @@ export class MistyLogger {
     eventType: string,
     severity: SeverityNumber,
     body: string,
-    attributes: Record<string, any> = {}
+    attributes: Record<string, any> = {},
   ) {
     this.logger.emit({
       severityNumber: severity,
@@ -162,7 +163,7 @@ export class MistyLogger {
       | ChatInputCommandInteraction
       | MessageContextMenuCommandInteraction
       | AutocompleteInteraction
-      | ModalSubmitInteraction
+      | ModalSubmitInteraction,
   ): Partial<CommandAttributes> {
     const attrs: Partial<CommandAttributes> = {
       "discord.interaction.id": interaction.id,
@@ -171,7 +172,9 @@ export class MistyLogger {
     if (interaction.isChatInputCommand()) {
       attrs["discord.command.name"] = interaction.commandName;
       attrs["discord.command.type"] = "chat_input";
-      const options = interaction.options.data.map((opt) => opt.name).join(", ");
+      const options = interaction.options.data
+        .map((opt) => opt.name)
+        .join(", ");
       if (options) attrs["discord.command.options"] = options;
     } else if (interaction.isMessageContextMenuCommand()) {
       attrs["discord.command.name"] = interaction.commandName;
@@ -192,11 +195,16 @@ export class MistyLogger {
       "discord.message.content_length": message.content.length,
       "discord.message.has_attachments": message.attachments.size > 0,
       "discord.message.is_reply": message.reference !== null,
-      "discord.message.mentions_bot": message.mentions.has(message.client.user!.id),
+      "discord.message.mentions_bot": message.mentions.has(
+        message.client.user!.id,
+      ),
     };
   }
 
-  extractErrorAttributes(error: Error, handled: boolean = true): ErrorAttributes {
+  extractErrorAttributes(
+    error: Error,
+    handled: boolean = true,
+  ): ErrorAttributes {
     return {
       "error.type": error.name,
       "error.message": error.message,
@@ -214,7 +222,7 @@ export class MistyLogger {
       "system.startup",
       SeverityNumber.INFO,
       "MistyBot is starting up",
-      attributes
+      attributes,
     );
   }
 
@@ -223,7 +231,7 @@ export class MistyLogger {
       "system.ready",
       SeverityNumber.INFO,
       "MistyBot is ready and connected to Discord",
-      attributes
+      attributes,
     );
   }
 
@@ -232,7 +240,7 @@ export class MistyLogger {
       "system.shutdown",
       SeverityNumber.INFO,
       "MistyBot is shutting down",
-      attributes
+      attributes,
     );
   }
 
@@ -244,7 +252,7 @@ export class MistyLogger {
       {
         ...this.extractErrorAttributes(error, false),
         ...attributes,
-      }
+      },
     );
   }
 
@@ -258,9 +266,10 @@ export class MistyLogger {
       | MessageContextMenuCommandInteraction
       | AutocompleteInteraction
       | ModalSubmitInteraction,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
-    const commandName = "commandName" in interaction ? interaction.commandName : "unknown";
+    const commandName =
+      "commandName" in interaction ? interaction.commandName : "unknown";
     this.log(
       "command.start",
       SeverityNumber.INFO,
@@ -270,7 +279,7 @@ export class MistyLogger {
         ...this.extractGuildAttributes(interaction.guild),
         ...this.extractCommandAttributes(interaction),
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -281,9 +290,10 @@ export class MistyLogger {
       | AutocompleteInteraction
       | ModalSubmitInteraction,
     durationMs: number,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
-    const commandName = "commandName" in interaction ? interaction.commandName : "unknown";
+    const commandName =
+      "commandName" in interaction ? interaction.commandName : "unknown";
     this.log(
       "command.success",
       SeverityNumber.INFO,
@@ -294,7 +304,7 @@ export class MistyLogger {
         ...this.extractCommandAttributes(interaction),
         "command.duration_ms": durationMs,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -306,9 +316,10 @@ export class MistyLogger {
       | ModalSubmitInteraction,
     error: Error,
     durationMs: number,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
-    const commandName = "commandName" in interaction ? interaction.commandName : "unknown";
+    const commandName =
+      "commandName" in interaction ? interaction.commandName : "unknown";
     this.log(
       "command.error",
       SeverityNumber.ERROR,
@@ -320,7 +331,7 @@ export class MistyLogger {
         ...this.extractErrorAttributes(error),
         "command.duration_ms": durationMs,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -328,7 +339,10 @@ export class MistyLogger {
   // Message Events
   // --------------------------------------------------------------------------
 
-  logMessageReceived(message: Message, additionalAttributes: Record<string, any> = {}) {
+  logMessageReceived(
+    message: Message,
+    additionalAttributes: Record<string, any> = {},
+  ) {
     this.log(
       "message.received",
       SeverityNumber.DEBUG,
@@ -338,15 +352,16 @@ export class MistyLogger {
         ...this.extractGuildAttributes(message.guild),
         ...this.extractMessageAttributes(message),
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logMessageIgnored(
     message: Message,
     reason: string,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
+    if (!env.LOG_MESSAGE_IGNORED) return;
     this.log(
       "message.ignored",
       SeverityNumber.DEBUG,
@@ -357,14 +372,14 @@ export class MistyLogger {
         ...this.extractMessageAttributes(message),
         "message.ignore_reason": reason,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logMessageResponseSent(
     message: Message,
     durationMs: number,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "message.response.sent",
@@ -376,14 +391,14 @@ export class MistyLogger {
         ...this.extractMessageAttributes(message),
         "message.response.duration_ms": durationMs,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logMessageError(
     message: Message,
     error: Error,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "message.error",
@@ -395,7 +410,7 @@ export class MistyLogger {
         ...this.extractMessageAttributes(message),
         ...this.extractErrorAttributes(error),
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -406,7 +421,7 @@ export class MistyLogger {
   logAIGenerationStart(
     userId: string,
     model: string,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.generation.start",
@@ -416,7 +431,7 @@ export class MistyLogger {
         "discord.user.id": userId,
         "ai.model.name": model,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -424,7 +439,7 @@ export class MistyLogger {
     userId: string,
     model: string,
     aiAttributes: Partial<AIAttributes>,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.generation.success",
@@ -435,7 +450,7 @@ export class MistyLogger {
         "ai.model.name": model,
         ...aiAttributes,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -443,7 +458,7 @@ export class MistyLogger {
     userId: string,
     model: string,
     error: Error,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.generation.error",
@@ -454,14 +469,14 @@ export class MistyLogger {
         "ai.model.name": model,
         ...this.extractErrorAttributes(error),
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logAIToolInvoked(
     userId: string,
     toolName: string,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.tool.invoked",
@@ -471,7 +486,7 @@ export class MistyLogger {
         "discord.user.id": userId,
         "ai.tool.name": toolName,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -482,7 +497,7 @@ export class MistyLogger {
   logModerationStart(
     userId: string,
     contentLength: number,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.moderation.start",
@@ -492,14 +507,14 @@ export class MistyLogger {
         "discord.user.id": userId,
         "moderation.content_length": contentLength,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logModerationComplete(
     userId: string,
     isSafe: boolean,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.moderation.complete",
@@ -509,14 +524,14 @@ export class MistyLogger {
         "discord.user.id": userId,
         "moderation.is_safe": isSafe,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logModerationError(
     userId: string,
     error: Error,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ai.moderation.error",
@@ -526,7 +541,7 @@ export class MistyLogger {
         "discord.user.id": userId,
         ...this.extractErrorAttributes(error),
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -538,7 +553,7 @@ export class MistyLogger {
     guildId: string,
     channelId: string,
     audioFile: string,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "voice.play",
@@ -549,7 +564,7 @@ export class MistyLogger {
         "discord.voice.channel_id": channelId,
         "audio.file": audioFile,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -557,7 +572,7 @@ export class MistyLogger {
     guildId: string,
     channelId: string,
     audioFile: string,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "voice.play.complete",
@@ -568,7 +583,7 @@ export class MistyLogger {
         "discord.voice.channel_id": channelId,
         "audio.file": audioFile,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -576,7 +591,7 @@ export class MistyLogger {
     guildId: string,
     channelId: string,
     error: Error,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "voice.error",
@@ -587,7 +602,7 @@ export class MistyLogger {
         "discord.voice.channel_id": channelId,
         ...this.extractErrorAttributes(error),
         ...additionalAttributes,
-      }
+      },
     );
   }
 
@@ -599,7 +614,7 @@ export class MistyLogger {
     userId: string,
     remaining: number,
     limit: number,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     const exceeded = remaining <= 0;
     this.log(
@@ -612,14 +627,14 @@ export class MistyLogger {
         "ratelimit.limit": limit,
         "ratelimit.exceeded": exceeded,
         ...additionalAttributes,
-      }
+      },
     );
   }
 
   logRateLimitExceeded(
     userId: string,
     limit: number,
-    additionalAttributes: Record<string, any> = {}
+    additionalAttributes: Record<string, any> = {},
   ) {
     this.log(
       "ratelimit.exceeded",
@@ -630,7 +645,7 @@ export class MistyLogger {
         "ratelimit.limit": limit,
         "ratelimit.exceeded": true,
         ...additionalAttributes,
-      }
+      },
     );
   }
 

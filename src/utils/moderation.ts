@@ -31,7 +31,7 @@ export interface ModerationResult {
  */
 export async function scrutinizeMessage(
   aiText: string,
-  userId: string = "unknown"
+  userId: string = "unknown",
 ): Promise<ModerationResult> {
   logger.logModerationStart(userId, aiText.length);
 
@@ -39,19 +39,19 @@ export async function scrutinizeMessage(
     const scrutinizedMessage = await generateText({
       model: MODERATION_MODEL,
       messages: [
-        {
-          role: "system",
-          content: MODERATION_PROMPT,
-        },
-        {
-          role: "user",
-          content: aiText,
-        },
+        { role: "system", content: MODERATION_PROMPT },
+        { role: "user", content: aiText },
       ],
       output: Output.object({
         schema: z.object({
-          safe: z.boolean(),
-          message: z.string().optional(),
+          safe: z.boolean().describe("Whether the content is safe to send"),
+          // Change this from .optional() to a nullable/required string
+          // This ensures 'message' is always present in the JSON keys
+          message: z
+            .string()
+            .describe(
+              "Rejection message if safe is false, otherwise empty string",
+            ),
         }),
       }),
     });
