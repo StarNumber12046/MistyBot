@@ -14,13 +14,16 @@ import type { ClientType } from "../types.js";
  */
 export function createStopPlayingTool(
   latestMessage: Message,
-  client: ClientType
+  client: ClientType,
 ) {
   return tool({
     description:
       "Stops playing music from the 24h stream. Use this tool when asked to stop playing music or sing.",
     inputSchema: z.object({}),
     execute: async () => {
+      if (!latestMessage.guildId) {
+        return "I'm not singing!";
+      }
       const connection = getVoiceConnection(latestMessage.guildId ?? "");
 
       if (!connection) {
