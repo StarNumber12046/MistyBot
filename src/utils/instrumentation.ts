@@ -3,8 +3,8 @@ import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   ATTR_SERVICE_NAME,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-} from "@opentelemetry/semantic-conventions";
+  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
+} from "@opentelemetry/semantic-conventions/incubating";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import {
@@ -40,7 +40,7 @@ export const logExporter = new OTLPLogExporter(logExporterConfig);
 
 const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: "mistybot",
-  [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: env.NODE_ENV || "development",
+  [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: env.NODE_ENV || "development",
 });
 
 export const batchSpanProcessor = new BatchSpanProcessor(traceExporter, {
