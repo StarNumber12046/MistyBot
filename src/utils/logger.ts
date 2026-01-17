@@ -195,9 +195,9 @@ export class MistyLogger {
       "discord.message.content_length": message.content.length,
       "discord.message.has_attachments": message.attachments.size > 0,
       "discord.message.is_reply": message.reference !== null,
-      "discord.message.mentions_bot": message.mentions.has(
-        message.client.user!.id,
-      ),
+      "discord.message.mentions_bot": message.client.user
+        ? message.mentions.has(message.client.user.id)
+        : false,
     };
   }
 
