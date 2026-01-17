@@ -1,4 +1,10 @@
-import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder, SlashCommandSubcommandBuilder } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  MessageFlags,
+  SlashCommandBuilder,
+  SlashCommandSubcommandBuilder,
+} from "discord.js";
 import { redis } from "./redis.js";
 
 /**
@@ -68,7 +74,11 @@ export function createListManager(config: ListManagerConfig) {
         embeds: [
           new EmbedBuilder()
             .setTitle(embedTitle)
-            .setDescription(userList.length > 0 ? userList.join("\n") : "No users in this list"),
+            .setDescription(
+              userList.length > 0
+                ? userList.join("\n")
+                : "No users in this list",
+            ),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -132,8 +142,8 @@ export function createListManager(config: ListManagerConfig) {
  */
 export function addListManagementSubcommands(
   builder: SlashCommandBuilder,
-  listName: string
-): SlashCommandBuilder {
+  listName: string,
+) {
   return builder
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) =>
       subcommand
@@ -143,8 +153,8 @@ export function addListManagementSubcommands(
           option
             .setName("user")
             .setDescription("The user to add")
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     )
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) =>
       subcommand
@@ -154,13 +164,13 @@ export function addListManagementSubcommands(
           option
             .setName("user")
             .setDescription("The user to remove")
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     )
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) =>
       subcommand
         .setName("list")
-        .setDescription(`Lists all users on the ${listName}`)
+        .setDescription(`Lists all users on the ${listName}`),
     )
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) =>
       subcommand
@@ -170,7 +180,7 @@ export function addListManagementSubcommands(
           option
             .setName("user")
             .setDescription("The user to query")
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     );
 }
