@@ -12,7 +12,7 @@ import dotenv from "dotenv";
 import type { ClientType, EventType, CommandType, ModalType } from "./types.js";
 import { fileURLToPath } from "url";
 import { getVoiceChannels, hasMembers, playAudio } from "./utils/voice.js";
-import { eventTypes, posthogClient } from "./analytics.js";
+import { eventTypes, posthogClient, buildUserMetadata } from "./analytics.js";
 import { ratelimit } from "./utils/redis.js";
 // import { askLimit } from "./utils/redis.js";
 
@@ -135,12 +135,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       distinctId: interaction.user.id,
       properties: {
         command: interaction.commandName,
-        $set: {
-          name: interaction.user.username,
-          displayName: interaction.user.displayName,
-          avatar: interaction.user.avatarURL(),
-          userId: interaction.user.id,
-        },
+        $set: buildUserMetadata(interaction.user),
       },
     });
     try {
@@ -165,12 +160,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             properties: {
               type: "command",
               error: (error as Error).message,
-              $set: {
-                name: interaction.user.username,
-                displayName: interaction.user.displayName,
-                avatar: interaction.user.avatarURL(),
-                userId: interaction.user.id,
-              },
+              $set: buildUserMetadata(interaction.user),
             },
           });
           console.error(error);
@@ -192,12 +182,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       distinctId: interaction.user.id,
       properties: {
         command: interaction.commandName,
-        $set: {
-          name: interaction.user.username,
-          displayName: interaction.user.displayName,
-          avatar: interaction.user.avatarURL(),
-          userId: interaction.user.id,
-        },
+        $set: buildUserMetadata(interaction.user),
       },
     });
     try {
@@ -240,12 +225,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         properties: {
           type: "contextMenu",
           error: (error as Error).message,
-          $set: {
-            name: interaction.user.username,
-            displayName: interaction.user.displayName,
-            avatar: interaction.user.avatarURL(),
-            userId: interaction.user.id,
-          },
+          $set: buildUserMetadata(interaction.user),
         },
       });
       console.error(error);
@@ -264,12 +244,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       distinctId: interaction.user.id,
       properties: {
         modalId: interaction.customId,
-        $set: {
-          name: interaction.user.username,
-          displayName: interaction.user.displayName,
-          avatar: interaction.user.avatarURL(),
-          userId: interaction.user.id,
-        },
+        $set: buildUserMetadata(interaction.user),
       },
     });
     try {
@@ -294,12 +269,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             properties: {
               type: "modal",
               error: (error as Error).message,
-              $set: {
-                name: interaction.user.username,
-                displayName: interaction.user.displayName,
-                avatar: interaction.user.avatarURL(),
-                userId: interaction.user.id,
-              },
+              $set: buildUserMetadata(interaction.user),
             },
           });
           console.error(error);

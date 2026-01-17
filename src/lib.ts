@@ -4,7 +4,7 @@ import { type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import { basePrompt } from "./config.js";
 import { User, type Message } from "discord.js";
 import type { ClientType } from "./types.js";
-import { posthogClient, eventTypes } from "./analytics.js";
+import { posthogClient, eventTypes, buildUserMetadata } from "./analytics.js";
 import { redis } from "./utils/redis.js";
 import { makeCompleteEmoji } from "./utils/emoji.js";
 import { scrutinizeMessage } from "./utils/moderation.js";
@@ -41,12 +41,7 @@ export async function genMistyOutput(
           posthogDistinctId: latestMessage.author.id,
           posthogProperties: {
             discordMessageId: latestMessage.id,
-            $set: {
-              name: latestMessage.author.username,
-              displayName: latestMessage.author.displayName,
-              avatar: latestMessage.author.avatarURL(),
-              userId: latestMessage.author.id,
-            },
+            $set: buildUserMetadata(latestMessage.author),
           },
         },
       ),
@@ -128,12 +123,7 @@ export async function getMistyAskOutput(request: string, user: User) {
     model: withTracing(await getUserPreferredModel(user), posthogClient, {
       posthogDistinctId: user.id,
       posthogProperties: {
-        $set: {
-          name: user.username,
-          displayName: user.displayName,
-          avatar: user.avatarURL(),
-          userId: user.id,
-        },
+        $set: buildUserMetadata(user),
       },
     }),
     system: basePrompt,
