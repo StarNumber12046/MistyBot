@@ -1,4 +1,4 @@
-import { ChannelType, Guild, User, VoiceChannel } from "discord.js";
+import { ChannelType, ChatInputCommandInteraction, Guild, GuildMember, User, VoiceChannel } from "discord.js";
 import {
   joinVoiceChannel,
   createAudioPlayer,
@@ -8,7 +8,7 @@ import {
 } from "@discordjs/voice";
 import { join } from "path";
 import type { ClientType } from "~/types.js";
-import { posthogClient, eventTypes } from "../analytics.js";
+import { posthogClient, eventTypes, buildUserMetadata } from "../analytics.js";
 
 /**
  * Gets all voice channels in a guild
@@ -17,6 +17,30 @@ export function getVoiceChannels(guild: Guild): VoiceChannel[] {
   return guild.channels.cache
     .filter((channel) => channel.type === ChannelType.GuildVoice)
     .map((channel) => channel as VoiceChannel);
+}
+
+/**
+ * Gets a voice channel from an interaction, either from the channel option
+ * or from the user's current voice channel. Returns an error object if validation fails.
+ */
+export function getVoiceChannelFromInteraction(
+  interaction: ChatInputCommandInteraction
+): { channel: VoiceChannel } | { error: string } {
+  let channel = interaction.options.getChannel("channel");
+  const member = interaction.member as GuildMember;
+
+  if (!channel) {
+    if (!member?.voice?.channel) {
+      return { error: "You need to be in a voice channel or specify a channel!" };
+    }
+    channel = member.voice.channel;
+  }
+
+  if (channel.type !== ChannelType.GuildVoice) {
+    return { error: "That's not a valid voice channel!" };
+  }
+
+  return { channel: channel as VoiceChannel };
 }
 
 /**
@@ -81,12 +105,7 @@ export async function playAudioPlaylist(
       event: eventTypes.songPlay,
       distinctId: user.id,
       properties: {
-        $set: {
-          name: user.username,
-          displayName: user.displayName,
-          avatar: user.avatarURL(),
-          userId: user.id,
-        },
+        $set: buildUserMetadata(user),
         channel: channel.name,
         song: filename,
       },
@@ -153,12 +172,7 @@ export async function playAudioPlaylist(
       event: eventTypes.songPlay,
       distinctId: user.id,
       properties: {
-        $set: {
-          name: user.username,
-          displayName: user.displayName,
-          avatar: user.avatarURL(),
-          userId: user.id,
-        },
+        $set: buildUserMetadata(user),
         channel: channel.name,
         song: filename,
       },

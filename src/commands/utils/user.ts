@@ -3,8 +3,8 @@ import {
   type ChatInputCommandInteraction,
   MessageFlags,
 } from "discord.js";
-import { env } from "process";
 import { ratelimit, redis } from "../../utils/redis.js";
+import { isOwner } from "../../utils/permissions.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -17,7 +17,7 @@ export default {
     )
     .setDescription("Command to see info about a user"),
   async execute(interaction: ChatInputCommandInteraction) {
-    if (interaction.user.id !== env.OWNER_ID) return;
+    if (!isOwner(interaction)) return;
     const user = interaction.options.getUser("user");
     if (!user) {
       await interaction.reply({

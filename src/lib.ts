@@ -1,203 +1,36 @@
 import { withTracing } from "@posthog/ai";
-import {
-  generateText,
-  Output,
-  tool,
-  // type FilePart,
-  // type ImagePart,
-  type TextPart,
-} from "ai";
+import { generateText } from "ai";
 import { type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
-import {
-  basePrompt,
-  DEFAULT_MODEL,
-  emojis,
-  MODELS,
-  MODERATION_MODEL,
-  MODERATION_PROMPT,
-} from "./config.js";
-import { User, VoiceChannel, type Message } from "discord.js";
-import { z } from "zod/v3";
+import { basePrompt } from "./config.js";
+import { User, type Message } from "discord.js";
 import type { ClientType } from "./types.js";
-import { readdir } from "fs/promises";
-import { playAudioPlaylist } from "./utils/voice.js";
-import { getVoiceConnection } from "@discordjs/voice";
-import NodeID3 from "node-id3";
-import { posthogClient, eventTypes } from "./analytics.js";
+import { posthogClient, eventTypes, buildUserMetadata } from "./analytics.js";
 import { redis } from "./utils/redis.js";
+import { makeCompleteEmoji } from "./utils/emoji.js";
+import { scrutinizeMessage } from "./utils/moderation.js";
+import { getMessageContentOrParts } from "./utils/message-transformer.js";
+import { getUserPreferredModel } from "./utils/model-selector.js";
+import {
+  createMyselfTool,
+  createSendMessageTool,
+  createPlayMusicTool,
+  createStopPlayingTool,
+  createWhatSongTool,
+} from "./tools/index.js";
 
-function makeCompleteEmoji(text: string) {
-  // Replace anything matching <:emoji:id> with :emoji:
-  text = text.replaceAll(/<a?:(\w+):(\d+)>/g, (match, emoji) => {
-    return `:${emoji}:`;
-  });
-  Object.keys(emojis).forEach((emoji) => {
-    text = text.replaceAll(":" + emoji + ":", emojis[emoji].completeEmoji);
-  });
-  console.log(text);
-  return text;
-}
-
-async function scrutinizeMessage(aiText: string) {
-  const scrutinizedMessage = await generateText({
-    model: MODERATION_MODEL,
-    messages: [
-      {
-        role: "system",
-        content: MODERATION_PROMPT,
-      },
-      {
-        role: "user",
-        content: aiText,
-      },
-    ],
-    output: Output.object({
-      schema: z.object({
-        safe: z.boolean(),
-        message: z.string().optional(),
-      }),
-    }),
-  });
-  return scrutinizedMessage.output;
-}
-
-const toolsPrompt = `
-### **5. Special Commands & Input Structure**
-
-On EVERY request you MUST use a tool. Not using a tool will lead to a request failure.`;
-
-const systemPrompt = basePrompt + toolsPrompt;
-
-console.log(systemPrompt);
-
-function getMessageContentOrParts(message: Message) {
-  if (message.author.bot) {
-    return {
-      content: message.cleanContent,
-      role: "assistant" as const,
-    };
-  }
-  return {
-    role: "user" as const,
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify({
-          author: {
-            username: message.author.username,
-            displayName: message.author.displayName,
-            id: message.author.id,
-          },
-          content: message.cleanContent,
-          id: message.id,
-        }),
-      } as TextPart,
-
-      // ...(message.attachments.map((attachment) => {
-      // const isImage = attachment.contentType?.startsWith("image");
-      // if (isImage) {
-      // return {
-      // type: "image",
-      // image: attachment.url,
-      // mimeType: attachment.contentType,
-      // };
-      // }
-      // return {
-      // type: isImage ? "image" : "file",
-      // data: attachment.url,
-      // mimeType: attachment.contentType,
-      // };
-      // }) as ImagePart[]),
-    ],
-  };
-}
-
-async function getUserPreferredModel(user: User) {
-  const userModel: string =
-    (await redis.get(`user:${user.id}:model`)) ?? DEFAULT_MODEL;
-  if (userModel && userModel in MODELS) {
-    return MODELS[userModel as keyof typeof MODELS];
-  }
-  return MODELS[DEFAULT_MODEL];
-}
+const systemPrompt = basePrompt;
 
 export async function genMistyOutput(
   messages: Message[],
   client: ClientType,
-  latestMessage: Message
+  latestMessage: Message,
 ) {
-  const myselfTool = tool({
-    description:
-      'Used to send a picture of yourself to the chat. Only use this when the most recent output is asking for your appearance (e.g. "what do you look like?" or "send me a picture of yourself").',
-    inputSchema: z.object({}),
-    execute: async () => {
-      return `{{MYSELF}}`;
-    },
-  });
-
-  const sendMessageTool = tool({
-    description:
-      "Sends a message to the chat. Use this tool during conversations. Use this tool if you don't have any other tools available. ONLY include the message contents!",
-    inputSchema: z.object({
-      message: z.string(),
-    }),
-    execute: async ({ message }) => {
-      return message;
-    },
-  });
-
-  const playMusicTool = tool({
-    description:
-      "Plays music from the 24h stream. Use this tool when asked to play music or sing.",
-    inputSchema: z.object({}),
-    execute: async () => {
-      if (!latestMessage.member?.voice?.channel) {
-        return "I don't know where to sing!";
-      }
-      await playAudioPlaylist(
-        latestMessage.member.voice.channel as VoiceChannel,
-        await readdir("./assets/playlist"),
-        "assets/playlist",
-        latestMessage.member.user
-      );
-      return "I'm now singing music from the 24h stream!";
-    },
-  });
-
-  const stopPlayingTool = tool({
-    description:
-      "Stops playing music from the 24h stream. Use this tool when asked to stop playing music or sing.",
-    inputSchema: z.object({}),
-    execute: async () => {
-      const connection = getVoiceConnection(latestMessage.guildId ?? "");
-      if (!connection) {
-        return "I'm not singing!";
-      }
-      client.players.delete(latestMessage.guildId ?? "");
-      connection.destroy();
-      return "I'm no longer singing!";
-    },
-  });
-
-  const whatSongTool = tool({
-    description:
-      "Tells you what song Misty is currently playing. Use this tool when asked to tell you what song Misty is playing.",
-    inputSchema: z.object({}),
-    execute: async () => {
-      const resource = client.audioResources.get(latestMessage.guildId ?? "");
-
-      if (!resource) {
-        return "I'm not singing!";
-      }
-
-      const filename = (resource.metadata as { filename: string })
-        ?.filename as string;
-      const resourceTags = NodeID3.read(filename);
-      return `I'm currently playing ${resourceTags.title ?? "Unknown"} by ${
-        resourceTags.artist ?? "Unknown"
-      }`;
-    },
-  });
+  // Create tools with injected dependencies
+  const myselfTool = createMyselfTool();
+  const sendMessageTool = createSendMessageTool();
+  const playMusicTool = createPlayMusicTool(latestMessage);
+  const stopPlayingTool = createStopPlayingTool(latestMessage, client);
+  const whatSongTool = createWhatSongTool(latestMessage, client);
 
   try {
     const response = await generateText({
@@ -208,14 +41,9 @@ export async function genMistyOutput(
           posthogDistinctId: latestMessage.author.id,
           posthogProperties: {
             discordMessageId: latestMessage.id,
-            $set: {
-              name: latestMessage.author.username,
-              displayName: latestMessage.author.displayName,
-              avatar: latestMessage.author.avatarURL(),
-              userId: latestMessage.author.id,
-            },
+            $set: buildUserMetadata(latestMessage.author),
           },
-        }
+        },
       ),
       providerOptions: {
         google: {
@@ -268,11 +96,11 @@ export async function genMistyOutput(
 
     const outputText = makeCompleteEmoji(message).replace(
       /\b(?:i(?:[''])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
-      "I'm not a dog$1"
+      "I'm not a dog$2",
     );
 
     const userUnderScrutiny = await redis.get(
-      `scrutiny:${latestMessage.author.id}`
+      `scrutiny:${latestMessage.author.id}`,
     );
     if (userUnderScrutiny) {
       const scrutinyResponse = await scrutinizeMessage(outputText);
@@ -295,12 +123,7 @@ export async function getMistyAskOutput(request: string, user: User) {
     model: withTracing(await getUserPreferredModel(user), posthogClient, {
       posthogDistinctId: user.id,
       posthogProperties: {
-        $set: {
-          name: user.username,
-          displayName: user.displayName,
-          avatar: user.avatarURL(),
-          userId: user.id,
-        },
+        $set: buildUserMetadata(user),
       },
     }),
     system: basePrompt,
@@ -325,6 +148,6 @@ export async function getMistyAskOutput(request: string, user: User) {
   });
 
   return makeCompleteEmoji(
-    response.text.replace("{__USER__}", `<@${user.id}>`)
+    response.text.replace("{__USER__}", `<@${user.id}>`),
   );
 }

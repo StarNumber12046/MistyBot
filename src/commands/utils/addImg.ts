@@ -5,7 +5,8 @@ import {
   MessageFlags,
 } from "discord.js";
 import { editFile } from "../../utils/pr.js";
-import { uploadUrl } from "../../utils/ut.js";
+import { uploadAttachments } from "../../utils/attachment-upload.js";
+import { requireOwner } from "../../utils/permissions.js";
 
 export function appendUrlsToRedirectArray(
   newUrls: string[]
@@ -60,26 +61,14 @@ export default {
   async execute(interaction: MessageContextMenuCommandInteraction) {
     const { attachments, id: messageId } = interaction.targetMessage;
     await interaction.deferReply();
-    if (interaction.user.id !== process.env.OWNER_ID) {
-      return interaction.followUp({
-        content: "You are not the owner of this bot",
-        ephemeral: true,
-      });
-    }
+    if (!(await requireOwner(interaction))) return;
     if (attachments.size === 0) {
       return interaction.followUp({
         content: "No image found in the message",
         ephemeral: true,
       });
     }
-    const attachmentUtUrls = await Promise.all(
-      attachments.map(async (attachment) => {
-        const url = attachment.url;
-        const ufsUrl = await uploadUrl(url);
-        return ufsUrl;
-      })
-    );
-    const attachmentUrls = attachmentUtUrls.filter(Boolean);
+    const attachmentUrls = await uploadAttachments(Array.from(attachments.values()));
     if (attachmentUrls.length === 0) {
       return interaction.followUp({
         content: "Failed to upload images",
@@ -91,9 +80,7 @@ export default {
       repo: "starnumber12046.github.io",
       baseBranch: "main",
       filePath: "src/urls.ts",
-      editFn: appendUrlsToRedirectArray(
-        attachmentUrls.filter((url) => url != undefined)
-      ),
+      editFn: appendUrlsToRedirectArray(attachmentUrls),
       commitMessage: "Add Misty Images from " + messageId,
     });
     if (success) {

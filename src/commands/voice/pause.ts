@@ -1,6 +1,13 @@
-import { channel } from "diagnostics_channel";
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { posthogClient, eventTypes } from "../../analytics.js";
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  type TextChannel,
+} from "discord.js";
+import {
+  posthogClient,
+  eventTypes,
+  buildUserMetadata,
+} from "../../analytics.js";
 import type { ClientType } from "~/types.js";
 export default {
   data: new SlashCommandBuilder()
@@ -18,13 +25,8 @@ export default {
       event: eventTypes.songStop,
       distinctId: interaction.user.id,
       properties: {
-        $set: {
-          name: interaction.user.username,
-          displayName: interaction.user.displayName,
-          avatar: interaction.user.avatarURL(),
-          userId: interaction.user.id,
-        },
-        channel: channel.name,
+        $set: buildUserMetadata(interaction.user),
+        channel: (interaction.channel as TextChannel | undefined)?.name,
       },
     });
     await interaction.followUp("Music paused!");

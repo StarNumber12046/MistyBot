@@ -5,7 +5,7 @@ import {
   MessageContextMenuCommandInteraction,
   TextChannel,
 } from "discord.js";
-import { uploadUrl } from "../../utils/ut.js";
+import { uploadAttachments } from "../../utils/attachment-upload.js";
 
 export default {
   data: new ContextMenuCommandBuilder()
@@ -27,14 +27,7 @@ export default {
         ephemeral: true,
       });
     }
-    const attachmentUtUrls = await Promise.all(
-      attachments.map(async (attachment) => {
-        const url = attachment.url;
-        const ufsUrl = await uploadUrl(url);
-        return ufsUrl;
-      })
-    );
-    const attachmentUrls = attachmentUtUrls.filter(Boolean);
+    const attachmentUrls = await uploadAttachments(Array.from(attachments.values()));
     if (attachmentUrls.length === 0) {
       return interaction.followUp({
         content: "No valid images",
@@ -47,10 +40,10 @@ export default {
         `There ${
           attachmentUrls.length == 1
             ? "is 1 image"
-            : "are " + attachmentUtUrls.length + "images"
+            : "are " + attachmentUrls.length + " images"
         }.\n Original message: https://discord.com/channels/${originalGuildId}/${originalChannelId}/${messageId}`
       )
-      .setImage(attachmentUrls[0] as string)
+      .setImage(attachmentUrls[0])
       .setFooter({
         text: `Original message: ${originalChannelId}/${messageId}`,
       });
