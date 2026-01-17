@@ -73,7 +73,7 @@ export default {
       !message.content.includes(client.user?.id ?? "")
     ) {
       logger.logMessageIgnored(message, "message is for guess game");
-      handleAircraftGuess(message, client);
+      await handleAircraftGuess(message, client);
       return;
     }
 
