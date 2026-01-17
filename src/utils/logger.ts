@@ -343,6 +343,7 @@ export class MistyLogger {
     message: Message,
     additionalAttributes: Record<string, any> = {},
   ) {
+    if (!env.LOG_MESSAGE_RECEIVED) return;
     this.log(
       "message.received",
       SeverityNumber.DEBUG,
