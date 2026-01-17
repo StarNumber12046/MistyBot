@@ -9,7 +9,7 @@ import fs from "fs";
 import path from "path";
 
 import dotenv from "dotenv";
-import type { ClientType, EventType, CommandType, ModalType } from "./types.js";
+import type { ClientType, EventType, CommandType } from "./types.js";
 import { fileURLToPath } from "url";
 import { getVoiceChannels, hasMembers, playAudio } from "./utils/voice.js";
 import { eventTypes, posthogClient, buildUserMetadata } from "./analytics.js";
@@ -62,7 +62,7 @@ for (const folder of commandFolders) {
       client.commands.set(command.data.name, command);
     } else {
       console.log(
-        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
       );
     }
   }
@@ -86,7 +86,7 @@ for (const modal of modalFiles) {
 */
 async function playMeowOnGuilds() {
   const guilds = client.guilds.cache.filter(
-    (guild) => guild.members.cache.filter((member) => member.user.bot).size > 0
+    (guild) => guild.members.cache.filter((member) => member.user.bot).size > 0,
   );
   guilds.forEach(async (guild) => {
     getVoiceChannels(guild).forEach(async (channel) => {
@@ -98,7 +98,7 @@ async function playMeowOnGuilds() {
         if (channel.name === "121.5") {
           console.log("Meowing on guard!");
         }
-        if (randomValue < 0.10 || channel.name === "121.5") {
+        if (randomValue < 0.1 || channel.name === "121.5") {
           posthogClient.capture({
             event: eventTypes.meow,
             distinctId: channel.id,
@@ -126,7 +126,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (!command) {
       console.error(
-        `No command matching ${interaction.commandName} was found.`
+        `No command matching ${interaction.commandName} was found.`,
       );
       return;
     }
@@ -173,7 +173,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (!command) {
       console.error(
-        `No command matching ${interaction.commandName} was found.`
+        `No command matching ${interaction.commandName} was found.`,
       );
       return;
     }
@@ -211,7 +211,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (!command) {
       console.error(
-        `No command matching ${interaction.commandName} was found.`
+        `No command matching ${interaction.commandName} was found.`,
       );
       return;
     }
@@ -223,7 +223,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         event: eventTypes.interactionError,
         distinctId: interaction.user.id,
         properties: {
-          type: "contextMenu",
+          type: "autocomplete",
           error: (error as Error).message,
           $set: buildUserMetadata(interaction.user),
         },

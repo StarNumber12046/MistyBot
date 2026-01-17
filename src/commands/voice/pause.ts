@@ -1,6 +1,13 @@
-import { channel } from "diagnostics_channel";
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-import { posthogClient, eventTypes, buildUserMetadata } from "../../analytics.js";
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  type TextChannel,
+} from "discord.js";
+import {
+  posthogClient,
+  eventTypes,
+  buildUserMetadata,
+} from "../../analytics.js";
 import type { ClientType } from "~/types.js";
 export default {
   data: new SlashCommandBuilder()
@@ -19,7 +26,7 @@ export default {
       distinctId: interaction.user.id,
       properties: {
         $set: buildUserMetadata(interaction.user),
-        channel: channel.name,
+        channel: (interaction.channel as TextChannel | undefined)?.name,
       },
     });
     await interaction.followUp("Music paused!");

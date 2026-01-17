@@ -96,7 +96,7 @@ export async function genMistyOutput(
 
     const outputText = makeCompleteEmoji(message).replace(
       /\b(?:i(?:[''])?m|i am)\s+a\s+d(o|0)g\w*\b([.!?])?/gi,
-      "I'm not a dog$1",
+      "I'm not a dog$2",
     );
 
     const userUnderScrutiny = await redis.get(
