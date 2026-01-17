@@ -98,7 +98,7 @@ async function playMeowOnGuilds() {
         if (channel.name === "121.5") {
           console.log("Meowing on guard!");
         }
-        if (randomValue < 0.25 || channel.name === "121.5") {
+        if (randomValue < 0.10 || channel.name === "121.5") {
           posthogClient.capture({
             event: eventTypes.meow,
             distinctId: channel.id,
@@ -116,7 +116,7 @@ async function playMeowOnGuilds() {
 
 client.once(Events.ClientReady, () => {
   console.log("Ready!");
-  setTimeout(playMeowOnGuilds, 1000 * 60 * 5);
+  setTimeout(playMeowOnGuilds, 1000 * 60 * 15);
   playMeowOnGuilds();
 });
 
