@@ -9,6 +9,7 @@ import {
 import { join } from "path";
 import type { ClientType } from "~/types.js";
 import { posthogClient, eventTypes, buildUserMetadata } from "../analytics.js";
+import { logger } from "./logger.js";
 
 /**
  * Gets all voice channels in a guild
@@ -65,22 +66,37 @@ export function joinChannel(channel: VoiceChannel) {
  * Plays an MP3 file in a voice channel
  */
 export async function playAudio(channel: VoiceChannel, filename: string) {
-  const connection = joinChannel(channel);
-  const player = createAudioPlayer();
-  const resource = createAudioResource(join(process.cwd(), filename));
-
-  connection.subscribe(player);
-  console.log("Subscribed to player");
-  player.play(resource);
-  console.log("Playing audio");
-
-  return new Promise((resolve) => {
-    player.on(AudioPlayerStatus.Idle, () => {
-      console.log("Idle");
-      connection.destroy();
-      resolve(true);
-    });
+  logger.logVoicePlay(channel.guild.id, channel.id, filename, {
+    "discord.voice.channel_name": channel.name,
   });
+
+  try {
+    const connection = joinChannel(channel);
+    const player = createAudioPlayer();
+    const resource = createAudioResource(join(process.cwd(), filename));
+
+    connection.subscribe(player);
+    console.log("Subscribed to player");
+    player.play(resource);
+    console.log("Playing audio");
+
+    return new Promise((resolve) => {
+      player.on(AudioPlayerStatus.Idle, () => {
+        console.log("Idle");
+        logger.logVoicePlayComplete(channel.guild.id, channel.id, filename, {
+          "discord.voice.channel_name": channel.name,
+        });
+        connection.destroy();
+        resolve(true);
+      });
+    });
+  } catch (error) {
+    logger.logVoiceError(channel.guild.id, channel.id, error as Error, {
+      "audio.file": filename,
+      "discord.voice.channel_name": channel.name,
+    });
+    throw error;
+  }
 }
 
 export async function playAudioPlaylist(
@@ -91,6 +107,12 @@ export async function playAudioPlaylist(
   startingSong?: string
 ) {
   if (filenames.length === 0) return;
+
+  logger.logVoicePlay(channel.guild.id, channel.id, startingSong || "random", {
+    "discord.voice.channel_name": channel.name,
+    "audio.playlist_length": filenames.length,
+    "discord.user.id": user.id,
+  });
 
   const connection = joinChannel(channel);
   const player = createAudioPlayer();
@@ -146,6 +168,10 @@ export async function playAudioPlaylist(
   // Handle errors
   player.on("error", (error) => {
     console.error("Audio player error:", error);
+    logger.logVoiceError(channel.guild.id, channel.id, error, {
+      "discord.voice.channel_name": channel.name,
+      "discord.user.id": user.id,
+    });
 
     setTimeout(() => {
       playRandomSong();
