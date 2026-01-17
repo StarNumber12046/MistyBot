@@ -10,6 +10,7 @@ import { makeCompleteEmoji } from "./utils/emoji.js";
 import { scrutinizeMessage } from "./utils/moderation.js";
 import { getMessageContentOrParts } from "./utils/message-transformer.js";
 import { getUserPreferredModel } from "./utils/model-selector.js";
+import { logger } from "./utils/logger.js";
 import {
   createMyselfTool,
   createSendMessageTool,
@@ -25,6 +26,15 @@ export async function genMistyOutput(
   client: ClientType,
   latestMessage: Message,
 ) {
+  const startTime = Date.now();
+  const userModel = await getUserPreferredModel(latestMessage.author);
+  const modelName = userModel.modelId;
+
+  logger.logAIGenerationStart(latestMessage.author.id, modelName, {
+    "discord.message.id": latestMessage.id,
+    "ai.messages.count": messages.length,
+  });
+
   // Create tools with injected dependencies
   const myselfTool = createMyselfTool();
   const sendMessageTool = createSendMessageTool();
@@ -78,6 +88,29 @@ export async function genMistyOutput(
     const toolResponse = response.toolResults[0]?.output as string | undefined;
     const message = toolResponse || text;
 
+    // Log tool invocations
+    if (response.toolCalls && response.toolCalls.length > 0) {
+      for (const toolCall of response.toolCalls) {
+        logger.logAIToolInvoked(latestMessage.author.id, toolCall.toolName, {
+          "ai.tool.call_id": toolCall.toolCallId,
+          "discord.message.id": latestMessage.id,
+        });
+      }
+    }
+
+    // Log AI generation success
+    const usage = response.usage as any;
+    logger.logAIGenerationSuccess(latestMessage.author.id, modelName, {
+      "ai.generation.duration_ms": Date.now() - startTime,
+      "ai.response.tokens.input": usage?.promptTokens ?? usage?.inputTokens,
+      "ai.response.tokens.output": usage?.completionTokens ?? usage?.outputTokens,
+      "ai.tools.count": response.toolCalls?.length ?? 0,
+      "ai.tools.used": response.toolCalls?.map((tc) => tc.toolName) ?? [],
+      "ai.stop_reason": response.finishReason,
+    }, {
+      "discord.message.id": latestMessage.id,
+    });
+
     posthogClient.capture({
       event: eventTypes.aiMessage,
       distinctId: latestMessage.author.id,
@@ -103,7 +136,7 @@ export async function genMistyOutput(
       `scrutiny:${latestMessage.author.id}`,
     );
     if (userUnderScrutiny) {
-      const scrutinyResponse = await scrutinizeMessage(outputText);
+      const scrutinyResponse = await scrutinizeMessage(outputText, latestMessage.author.id);
       if (scrutinyResponse.safe) {
         return outputText;
       }
@@ -112,6 +145,10 @@ export async function genMistyOutput(
     }
     return outputText;
   } catch (error) {
+    logger.logAIGenerationError(latestMessage.author.id, modelName, error as Error, {
+      "discord.message.id": latestMessage.id,
+      "ai.generation.duration_ms": Date.now() - startTime,
+    });
     console.log(error);
     console.log(JSON.stringify(error));
     // return "I'm sorry, I don't know what to say. Please try again later.";
@@ -119,35 +156,61 @@ export async function genMistyOutput(
 }
 
 export async function getMistyAskOutput(request: string, user: User) {
-  const response = await generateText({
-    model: withTracing(await getUserPreferredModel(user), posthogClient, {
-      posthogDistinctId: user.id,
-      posthogProperties: {
-        $set: buildUserMetadata(user),
-      },
-    }),
-    system: basePrompt,
-    messages: [
-      {
-        role: "system",
+  const startTime = Date.now();
+  const userModel = await getUserPreferredModel(user);
+  const modelName = userModel.modelId;
 
-        content:
-          basePrompt +
-          "\n You MUST output text transforming what the user says into a request for LuxPlanes, your owner to fulfull. You can use emojis, especially :pwease:. You MUST format the text starting by saying who made the request, replaicing their name with {__USER__}. ALWAYS include {__USER__} in the output. If you are referring to LuxPlanes, refer to him as you, not as @LuxPlanes. If someone gives a reason for the request, please keep it but turn it into a Misty-style response, while still keeping the original meaning.",
-      },
-      {
-        role: "user",
-
-        content: JSON.stringify({
-          author: user,
-          cleanContent: request,
-          id: user.id,
-        }),
-      },
-    ],
+  logger.logAIGenerationStart(user.id, modelName, {
+    "ai.generation.type": "ask_command",
   });
 
-  return makeCompleteEmoji(
-    response.text.replace("{__USER__}", `<@${user.id}>`),
-  );
+  try {
+    const response = await generateText({
+      model: withTracing(userModel, posthogClient, {
+        posthogDistinctId: user.id,
+        posthogProperties: {
+          $set: buildUserMetadata(user),
+        },
+      }),
+      system: basePrompt,
+      messages: [
+        {
+          role: "system",
+
+          content:
+            basePrompt +
+            "\n You MUST output text transforming what the user says into a request for LuxPlanes, your owner to fulfull. You can use emojis, especially :pwease:. You MUST format the text starting by saying who made the request, replaicing their name with {__USER__}. ALWAYS include {__USER__} in the output. If you are referring to LuxPlanes, refer to him as you, not as @LuxPlanes. If someone gives a reason for the request, please keep it but turn it into a Misty-style response, while still keeping the original meaning.",
+        },
+        {
+          role: "user",
+
+          content: JSON.stringify({
+            author: user,
+            cleanContent: request,
+            id: user.id,
+          }),
+        },
+      ],
+    });
+
+    const usage = response.usage as any;
+    logger.logAIGenerationSuccess(user.id, modelName, {
+      "ai.generation.duration_ms": Date.now() - startTime,
+      "ai.response.tokens.input": usage?.promptTokens ?? usage?.inputTokens,
+      "ai.response.tokens.output": usage?.completionTokens ?? usage?.outputTokens,
+      "ai.stop_reason": response.finishReason,
+    }, {
+      "ai.generation.type": "ask_command",
+    });
+
+    return makeCompleteEmoji(
+      response.text.replace("{__USER__}", `<@${user.id}>`),
+    );
+  } catch (error) {
+    logger.logAIGenerationError(user.id, modelName, error as Error, {
+      "ai.generation.duration_ms": Date.now() - startTime,
+      "ai.generation.type": "ask_command",
+    });
+    throw error;
+  }
 }

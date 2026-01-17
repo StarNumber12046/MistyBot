@@ -1,3 +1,6 @@
+// IMPORTANT: Instrumentation must be imported first to initialize OpenTelemetry
+import "./utils/instrumentation.js";
+
 import {
   Client,
   Collection,
@@ -14,11 +17,14 @@ import { fileURLToPath } from "url";
 import { getVoiceChannels, hasMembers, playAudio } from "./utils/voice.js";
 import { eventTypes, posthogClient, buildUserMetadata } from "./analytics.js";
 import { ratelimit } from "./utils/redis.js";
+import { logger } from "./utils/logger.js";
 // import { askLimit } from "./utils/redis.js";
 
 console.log("Starting up Misty");
 
 dotenv.config();
+
+logger.logSystemStartup();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const client = new Client({
@@ -116,12 +122,18 @@ async function playMeowOnGuilds() {
 
 client.once(Events.ClientReady, () => {
   console.log("Ready!");
+  logger.logSystemReady({
+    "discord.guilds.count": client.guilds.cache.size,
+    "discord.user.id": client.user?.id,
+    "discord.user.username": client.user?.username,
+  });
   setTimeout(playMeowOnGuilds, 1000 * 60 * 15);
   playMeowOnGuilds();
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
+    const startTime = Date.now();
     const command = client.commands.get(interaction.commandName);
 
     if (!command) {
@@ -130,6 +142,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       );
       return;
     }
+
+    logger.logCommandStart(interaction);
+
     posthogClient.capture({
       event: eventTypes.commandExecute,
       distinctId: interaction.user.id,
@@ -140,7 +155,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
     try {
       await command.execute(interaction);
+      logger.logCommandSuccess(interaction, Date.now() - startTime);
     } catch (error) {
+      const durationMs = Date.now() - startTime;
+      logger.logCommandError(interaction, error as Error, durationMs);
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
@@ -169,6 +187,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
   if (interaction.isMessageContextMenuCommand()) {
+    const startTime = Date.now();
     const command = client.commands.get(interaction.commandName);
 
     if (!command) {
@@ -177,6 +196,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
       );
       return;
     }
+
+    logger.logCommandStart(interaction);
+
     posthogClient.capture({
       event: eventTypes.commandExecute,
       distinctId: interaction.user.id,
@@ -187,7 +209,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
     try {
       await command.execute(interaction);
+      logger.logCommandSuccess(interaction, Date.now() - startTime);
     } catch (error) {
+      const durationMs = Date.now() - startTime;
+      logger.logCommandError(interaction, error as Error, durationMs);
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
@@ -207,6 +232,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
   if (interaction.isAutocomplete()) {
+    const startTime = Date.now();
     const command = client.commands.get(interaction.commandName);
 
     if (!command) {
@@ -216,9 +242,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    logger.logCommandStart(interaction);
+
     try {
       await command.autocomplete(interaction);
+      logger.logCommandSuccess(interaction, Date.now() - startTime);
     } catch (error) {
+      const durationMs = Date.now() - startTime;
+      logger.logCommandError(interaction, error as Error, durationMs);
       posthogClient.capture({
         event: eventTypes.interactionError,
         distinctId: interaction.user.id,
@@ -233,12 +264,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   if (interaction.isModalSubmit()) {
+    const startTime = Date.now();
     console.log(interaction.customId);
     const modalModule = client.modals.get(interaction.customId);
     if (!modalModule) {
       console.error(`No modal matching ${interaction.customId} was found.`);
       return;
     }
+
+    logger.logCommandStart(interaction);
+
     posthogClient.capture({
       event: eventTypes.modalOpen,
       distinctId: interaction.user.id,
@@ -249,7 +284,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
     try {
       modalModule.execute(client, interaction);
+      logger.logCommandSuccess(interaction, Date.now() - startTime);
     } catch (error) {
+      const durationMs = Date.now() - startTime;
+      logger.logCommandError(interaction, error as Error, durationMs);
       console.error(error);
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
@@ -280,3 +318,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.login(process.env.BOT_TOKEN);
+
+// Global error handlers
+process.on("unhandledRejection", (reason: Error, promise: Promise<any>) => {
+  logger.logSystemError(reason, {
+    "error.type": "UnhandledRejection",
+    "error.promise": String(promise),
+  });
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+process.on("uncaughtException", (error: Error) => {
+  logger.logSystemError(error, {
+    "error.type": "UncaughtException",
+  });
+  console.error("Uncaught Exception:", error);
+  process.exit(1);
+});

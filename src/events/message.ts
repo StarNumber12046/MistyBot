@@ -3,6 +3,7 @@ import type { ClientType } from "../types.js";
 import { genMistyOutput } from "../lib.js";
 import { ratelimit, redis } from "../utils/redis.js";
 import { IMAGES_URL } from "../config.js";
+import { logger } from "../utils/logger.js";
 
 async function recursivelyFetchMessage(
   message: Message,
@@ -58,12 +59,20 @@ export default {
     client: ClientType,
     message: OmitPartialGroupDMChannel<Message<boolean>>
   ) {
-    if (message.author.bot) return;
+    const startTime = Date.now();
+
+    logger.logMessageReceived(message);
+
+    if (message.author.bot) {
+      logger.logMessageIgnored(message, "author is bot");
+      return;
+    }
 
     if (
       client.guessGames.has(message.channel.id) &&
       !message.content.includes(client.user?.id ?? "")
     ) {
+      logger.logMessageIgnored(message, "message is for guess game");
       handleAircraftGuess(message, client);
       return;
     }
@@ -75,56 +84,90 @@ export default {
     if (
       !message.content.includes(`<@${client.user?.id}>`) &&
       completeMessageReference?.author.id !== client.user?.id
-    )
+    ) {
+      logger.logMessageIgnored(message, "bot not mentioned and not a reply to bot");
       return;
+    }
+
     const isUserBlacklisted = await redis.get(`blacklist:${message.author.id}`);
     if (isUserBlacklisted) {
+      logger.logMessageIgnored(message, "user is blacklisted");
       await message.reply("I don't wanna talk to you D:<");
       return;
     }
-    const { success, reset } = await ratelimit.limit(message.author.id);
+
+    const { success, reset, remaining, limit } = await ratelimit.limit(message.author.id);
+
+    logger.logRateLimitCheck(message.author.id, remaining ?? 0, limit);
 
     if (!success) {
+      logger.logRateLimitExceeded(message.author.id, limit);
       return await message.reply(
         `You ran out of messages! Retry <t:${Math.floor(reset / 1000)}:R>`
       );
     }
+
     try {
       await message.channel.sendTyping();
     } catch {
       console.log("Failed to send typing bruh");
     }
-    const messages = await recursivelyFetchMessage(message, 10);
 
-    const output = await genMistyOutput(messages, client, message);
-
-    if (output?.includes("{{MYSELF}}")) {
-      const imageResponse = await fetch(IMAGES_URL);
-      const imageData = Buffer.from(await imageResponse.arrayBuffer());
-      await message.reply({ files: [imageData] });
-      return;
-    }
-    if (!output) return;
     try {
-      const loadedJson = JSON.parse(output);
-      if (loadedJson.content) {
-        await message.reply(loadedJson.content);
+      const messages = await recursivelyFetchMessage(message, 10);
+
+      const output = await genMistyOutput(messages, client, message);
+
+      if (output?.includes("{{MYSELF}}")) {
+        const imageResponse = await fetch(IMAGES_URL);
+        const imageData = Buffer.from(await imageResponse.arrayBuffer());
+        await message.reply({ files: [imageData] });
+        logger.logMessageResponseSent(message, Date.now() - startTime, {
+          "message.response.type": "image",
+        });
         return;
       }
-      if (loadedJson.cleanContent) {
-        await message.reply(loadedJson.cleanContent);
+      if (!output) return;
+      try {
+        const loadedJson = JSON.parse(output);
+        if (loadedJson.content) {
+          await message.reply(loadedJson.content);
+          logger.logMessageResponseSent(message, Date.now() - startTime, {
+            "message.response.type": "text",
+          });
+          return;
+        }
+        if (loadedJson.cleanContent) {
+          await message.reply(loadedJson.cleanContent);
+          logger.logMessageResponseSent(message, Date.now() - startTime, {
+            "message.response.type": "text",
+          });
+          return;
+        }
+        await message.reply(output);
+        logger.logMessageResponseSent(message, Date.now() - startTime, {
+          "message.response.type": "text",
+        });
         return;
+      } catch {
+        if (output.includes('"avatar')) {
+          // Temp fix?
+          const formattedText = output.split('"avatar')[0];
+          if (!formattedText) return;
+          await message.reply(formattedText);
+          logger.logMessageResponseSent(message, Date.now() - startTime, {
+            "message.response.type": "text_partial",
+          });
+          return;
+        }
       }
-      return await message.reply(output);
-    } catch {
-      if (output.includes('"avatar')) {
-        // Temp fix?
-        const formattedText = output.split('"avatar')[0];
-        if (!formattedText) return;
-        await message.reply(formattedText);
-        return;
-      }
+      await message.reply(output);
+      logger.logMessageResponseSent(message, Date.now() - startTime, {
+        "message.response.type": "text",
+      });
+    } catch (error) {
+      logger.logMessageError(message, error as Error);
+      throw error;
     }
-    await message.reply(output);
   },
 };
