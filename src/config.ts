@@ -26,6 +26,7 @@ export const MODELS = {
   "Claude Sonnet 4.5 (bedrock)": bedrockClient(
     "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
   ),
+  "google-vertex/claude-sonnet-4-5": vertexClient("claude-sonnet-4-5"),
   "Claude Sonnet 4 (bedrock)": bedrockClient(
     "global.anthropic.claude-sonnet-4-20250514-v1:0"
   ),
@@ -38,7 +39,7 @@ export const MODELS = {
   "Qwen-3 (groq)": groqClient("qwen/qwen3-32b"),
 };
 
-export const DEFAULT_MODEL = "Kimi K2 (groq)";
+export const DEFAULT_MODEL = "google-vertex/claude-sonnet-4-5";
 
 export const MODERATION_MODEL = groqClient("openai/gpt-oss-safeguard-20b");
 
