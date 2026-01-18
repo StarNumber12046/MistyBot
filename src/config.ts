@@ -38,7 +38,7 @@ export const MODELS = {
   "Qwen-3 (groq)": groqClient("qwen/qwen3-32b"),
 };
 
-export const DEFAULT_MODEL = "GPT-OSS (groq)";
+export const DEFAULT_MODEL = "Kimi K2 (groq)";
 
 export const MODERATION_MODEL = groqClient("openai/gpt-oss-safeguard-20b");
 
