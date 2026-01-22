@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import { askLimit } from "../../utils/redis.js";
 import { getMistyAskOutput } from "../../lib.js";
+import { Effect } from "effect";
 
 export default {
   data: new SlashCommandBuilder()
@@ -36,7 +37,7 @@ export default {
       });
       return;
     }
-    const output = await getMistyAskOutput(request, interaction.user);
+    const output = await Effect.runPromise(getMistyAskOutput(request, interaction.user));
     const luxplanes = await interaction.client.users.fetch(
       process.env.LUXPLANES_ID ?? ""
     );

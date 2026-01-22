@@ -52,6 +52,7 @@
     "discord.js": "^14.25.1",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.7",
+    "effect": "^3.19.14",
     "flightradarapi": "^1.4.0",
     "music-metadata": "^11.10.6",
     "node-id3": "^0.2.9",

@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { Message, type OmitPartialGroupDMChannel } from "discord.js";
 import type { ClientType } from "../types.js";
 import { genMistyOutput } from "../lib.js";
@@ -121,7 +122,7 @@ export default {
     try {
       const messages = await recursivelyFetchMessage(message, 10);
 
-      const output = await genMistyOutput(messages, client, message);
+      const output = await Effect.runPromise(genMistyOutput(messages, client, message));
 
       if (output?.includes("{{MYSELF}}")) {
         const imageResponse = await fetch(IMAGES_URL);
