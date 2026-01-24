@@ -168,7 +168,7 @@ export default {
       }
       await message.reply({
         content: output.replace("@everyone", ""),
-        allowedMentions: { roles: [] },
+        allowedMentions: { roles: [], parse: ["roles", "users"] },
       });
       logger.logMessageResponseSent(message, Date.now() - startTime, {
         "message.response.type": "text",
