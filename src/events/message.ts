@@ -134,10 +134,9 @@ export default {
       }
       if (!output) return;
       await message.reply({
-        content: output.replace(
-          "@everyone",
-          "I TRIED TO PING EVERYONE AND FAILED LMFAOOOOO",
-        ),
+        content: output
+          .replace("@everyone", "I TRIED TO PING EVERYONE AND FAILED LMFAOOOOO")
+          .replace("@here", "I TRIED TO PING HERE AND FAILED LMFAOOOOO"),
         allowedMentions: { roles: [], parse: ["roles", "users"] },
       });
       logger.logMessageResponseSent(message, Date.now() - startTime, {
