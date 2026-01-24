@@ -18,8 +18,12 @@ import {
   createStopPlayingTool,
   createWhatSongTool,
 } from "./tools/index.js";
+const toolsPrompt = `
+### **5. Special Commands & Input Structure**
 
-const systemPrompt = basePrompt;
+You should use tools when asked to do something that requires them, e.g. when you need to send a picture of yourself or when you need to play a song.
+`;
+const systemPrompt = basePrompt + toolsPrompt;
 
 export async function genMistyOutput(
   messages: Message[],
@@ -100,16 +104,22 @@ export async function genMistyOutput(
 
     // Log AI generation success
     const usage = response.usage as any;
-    logger.logAIGenerationSuccess(latestMessage.author.id, modelName, {
-      "ai.generation.duration_ms": Date.now() - startTime,
-      "ai.response.tokens.input": usage?.promptTokens ?? usage?.inputTokens,
-      "ai.response.tokens.output": usage?.completionTokens ?? usage?.outputTokens,
-      "ai.tools.count": response.toolCalls?.length ?? 0,
-      "ai.tools.used": response.toolCalls?.map((tc) => tc.toolName) ?? [],
-      "ai.stop_reason": response.finishReason,
-    }, {
-      "discord.message.id": latestMessage.id,
-    });
+    logger.logAIGenerationSuccess(
+      latestMessage.author.id,
+      modelName,
+      {
+        "ai.generation.duration_ms": Date.now() - startTime,
+        "ai.response.tokens.input": usage?.promptTokens ?? usage?.inputTokens,
+        "ai.response.tokens.output":
+          usage?.completionTokens ?? usage?.outputTokens,
+        "ai.tools.count": response.toolCalls?.length ?? 0,
+        "ai.tools.used": response.toolCalls?.map((tc) => tc.toolName) ?? [],
+        "ai.stop_reason": response.finishReason,
+      },
+      {
+        "discord.message.id": latestMessage.id,
+      },
+    );
 
     posthogClient.capture({
       event: eventTypes.aiMessage,
@@ -136,7 +146,10 @@ export async function genMistyOutput(
       `scrutiny:${latestMessage.author.id}`,
     );
     if (userUnderScrutiny) {
-      const scrutinyResponse = await scrutinizeMessage(outputText, latestMessage.author.id);
+      const scrutinyResponse = await scrutinizeMessage(
+        outputText,
+        latestMessage.author.id,
+      );
       if (scrutinyResponse.safe) {
         return outputText;
       }
@@ -145,10 +158,15 @@ export async function genMistyOutput(
     }
     return outputText;
   } catch (error) {
-    logger.logAIGenerationError(latestMessage.author.id, modelName, error as Error, {
-      "discord.message.id": latestMessage.id,
-      "ai.generation.duration_ms": Date.now() - startTime,
-    });
+    logger.logAIGenerationError(
+      latestMessage.author.id,
+      modelName,
+      error as Error,
+      {
+        "discord.message.id": latestMessage.id,
+        "ai.generation.duration_ms": Date.now() - startTime,
+      },
+    );
     console.log(error);
     console.log(JSON.stringify(error));
     // return "I'm sorry, I don't know what to say. Please try again later.";
@@ -194,14 +212,20 @@ export async function getMistyAskOutput(request: string, user: User) {
     });
 
     const usage = response.usage as any;
-    logger.logAIGenerationSuccess(user.id, modelName, {
-      "ai.generation.duration_ms": Date.now() - startTime,
-      "ai.response.tokens.input": usage?.promptTokens ?? usage?.inputTokens,
-      "ai.response.tokens.output": usage?.completionTokens ?? usage?.outputTokens,
-      "ai.stop_reason": response.finishReason,
-    }, {
-      "ai.generation.type": "ask_command",
-    });
+    logger.logAIGenerationSuccess(
+      user.id,
+      modelName,
+      {
+        "ai.generation.duration_ms": Date.now() - startTime,
+        "ai.response.tokens.input": usage?.promptTokens ?? usage?.inputTokens,
+        "ai.response.tokens.output":
+          usage?.completionTokens ?? usage?.outputTokens,
+        "ai.stop_reason": response.finishReason,
+      },
+      {
+        "ai.generation.type": "ask_command",
+      },
+    );
 
     return makeCompleteEmoji(
       response.text.replace("{__USER__}", `<@${user.id}>`),
