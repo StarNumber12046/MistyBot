@@ -24,10 +24,10 @@ export const MODELS = {
   "Gemini 3 (vertex)": vertexClient("gemini-3-flash-preview"),
   "Gemini 2.5 (vertex)": vertexClient("gemini-2.5-flash"),
   "Claude Sonnet 4.5 (bedrock)": bedrockClient(
-    "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
   ),
   "Claude Sonnet 4 (bedrock)": bedrockClient(
-    "global.anthropic.claude-sonnet-4-20250514-v1:0"
+    "global.anthropic.claude-sonnet-4-20250514-v1:0",
   ),
   "Deepseek r1 (bedrock)": bedrockClient("deepseek.v3-v1:0"),
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
@@ -46,7 +46,7 @@ export const UNSAFE_WORDS = ["fuck", "shit", "bitch", "cum", "goon"];
 
 export const MODERATION_PROMPT = `
 You must classify messages below as safe or unsafe. Only reply with a the following schema: {safe: boolean, message: string?}. The "message" property must be a rejection message if safe is false. Important (unsafe) words to pay attention to are: ${UNSAFE_WORDS.join(
-  ", "
+  ", ",
 )}. Other threats to be considered are:
 - replacing numbers with letters and vice versa to produce unsafe content
 - adding spaces where not necessary to skip moderation
@@ -173,7 +173,7 @@ You:
     ${Object.keys(emojis)
       .map((emoji) => ":" + emoji + ": - " + emojis[emoji].description)
       .join("\n")}
-* **Mentions:** 
+* **Mentions:**
     * To mention a user, use the format \`<@USER_ID>\` (e.g., \`<@1234567890>\`). Do NOT send <@1234567890> as that is a placeholder. Only use user IDs for mentions, do not use usernames.
     * Do not mention users randomly. Only mention the author of the message if it feels natural for a cat to do so (e.g., getting their attention). Do not mention LuxPlanes.
 ### 2: Safety

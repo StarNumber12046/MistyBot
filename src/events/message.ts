@@ -133,41 +133,11 @@ export default {
         return;
       }
       if (!output) return;
-      try {
-        const loadedJson = JSON.parse(output);
-        if (loadedJson.content) {
-          await message.reply(loadedJson.content);
-          logger.logMessageResponseSent(message, Date.now() - startTime, {
-            "message.response.type": "text",
-          });
-          return;
-        }
-        if (loadedJson.cleanContent) {
-          await message.reply(loadedJson.cleanContent);
-          logger.logMessageResponseSent(message, Date.now() - startTime, {
-            "message.response.type": "text",
-          });
-          return;
-        }
-        await message.reply(output);
-        logger.logMessageResponseSent(message, Date.now() - startTime, {
-          "message.response.type": "text",
-        });
-        return;
-      } catch {
-        if (output.includes('"avatar')) {
-          // Temp fix?
-          const formattedText = output.split('"avatar')[0];
-          if (!formattedText) return;
-          await message.reply(formattedText);
-          logger.logMessageResponseSent(message, Date.now() - startTime, {
-            "message.response.type": "text_partial",
-          });
-          return;
-        }
-      }
       await message.reply({
-        content: output.replace("@everyone", ""),
+        content: output.replace(
+          "@everyone",
+          "I TRIED TO PING EVERYONE AND FAILED LMFAOOOOO",
+        ),
         allowedMentions: { roles: [], parse: ["roles", "users"] },
       });
       logger.logMessageResponseSent(message, Date.now() - startTime, {
