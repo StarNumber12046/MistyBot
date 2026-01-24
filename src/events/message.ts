@@ -166,7 +166,10 @@ export default {
           return;
         }
       }
-      await message.reply(output);
+      await message.reply({
+        content: output.replace("@everyone", ""),
+        allowedMentions: { roles: [] },
+      });
       logger.logMessageResponseSent(message, Date.now() - startTime, {
         "message.response.type": "text",
       });
