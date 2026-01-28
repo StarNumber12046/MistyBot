@@ -5,7 +5,7 @@ export const redis = Redis.fromEnv();
 
 export const ratelimit = new Ratelimit({
   redis: redis,
-  limiter: Ratelimit.fixedWindow(25, "5 h"),
+  limiter: Ratelimit.tokenBucket(10, "1h", 35),
   analytics: true,
 });
 

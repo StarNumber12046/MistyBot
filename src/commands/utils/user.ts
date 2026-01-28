@@ -13,7 +13,7 @@ export default {
       option
         .setName("user")
         .setDescription("The user to see info about")
-        .setRequired(true)
+        .setRequired(true),
     )
     .setDescription("Command to see info about a user"),
   async execute(interaction: ChatInputCommandInteraction) {
@@ -32,8 +32,8 @@ export default {
     await interaction.reply({
       content: `${
         user.tag
-      }'s profile:\nRemaining messages: ${remaining}\nResets in: <t:${Math.floor(
-        reset / 1000
+      }'s profile:\nRemaining messages: ${remaining}\nNext increase in: <t:${Math.floor(
+        reset / 1000,
       )}:R>\nIs blacklisted: ${
         blacklisted ? " true" : " false"
       }\nPreferred model: ${preferredModel ?? "default"}`,

@@ -15,7 +15,7 @@ export default {
     .setDescription("Gets info about your ratelimit"),
   async execute(interaction: ChatInputCommandInteraction) {
     const { remaining, reset } = await ratelimit.getRemaining(
-      interaction.user.id
+      interaction.user.id,
     );
     const raiseButton = new ButtonBuilder()
       .setCustomId("limit")
@@ -24,9 +24,9 @@ export default {
       // .setDisabled(remaining >= 5)
       .setEmoji("🐈");
     const contentComponent = new TextDisplayBuilder().setContent(
-      `You have ${remaining} remaining messages. Resets <t:${Math.floor(
-        reset / 1000
-      )}:R>.`
+      `You have ${remaining} remaining messages. Next increase <t:${Math.floor(
+        reset / 1000,
+      )}:R>.`,
     );
     const actionRow = new ActionRowBuilder()
       .addComponents([raiseButton])
@@ -53,14 +53,14 @@ export default {
         return;
       }
       const starNumber = await interaction.client.users.fetch(
-        process.env.OWNER_ID ?? ""
+        process.env.OWNER_ID ?? "",
       );
       await starNumber.send(
         `<@${
           interaction.user.id
-        }> has ${remaining} remaining messages. Resets <t:${Math.floor(
-          reset / 1000
-        )}:R>. He would like to have his limit reset.`
+        }> has ${remaining} remaining messages. Next increase <t:${Math.floor(
+          reset / 1000,
+        )}:R>. He would like to have his limit reset.`,
       );
       await confirmation.reply({
         content:
