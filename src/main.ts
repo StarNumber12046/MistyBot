@@ -247,6 +247,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
     logger.logCommandStart(interaction);
 
     try {
+      if (!command.autocomplete) {
+        throw new Error(
+          `Command ${interaction.commandName} does not have an autocomplete function`,
+        );
+      }
       await command.autocomplete(interaction);
       logger.logCommandSuccess(interaction, Date.now() - startTime);
     } catch (error) {
