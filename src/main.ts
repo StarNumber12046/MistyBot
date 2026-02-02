@@ -35,7 +35,7 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates,
   ],
   allowedMentions: {
-    parse: ["users", "roles"],
+    parse: ["users"],
     roles: [],
   },
 }) as ClientType;

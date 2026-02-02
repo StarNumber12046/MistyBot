@@ -101,6 +101,7 @@ export default {
 
     const { success, reset, remaining, limit } = await ratelimit.limit(
       message.author.id,
+      { rate: 2 },
     );
 
     logger.logRateLimitCheck(message.author.id, remaining ?? 0, limit);
@@ -137,7 +138,7 @@ export default {
         content: output
           .replace("@everyone", "I TRIED TO PING EVERYONE AND FAILED LMFAOOOOO")
           .replace("@here", "I TRIED TO PING HERE AND FAILED LMFAOOOOO"),
-        allowedMentions: { roles: [], parse: ["roles", "users"] },
+        allowedMentions: { roles: [], parse: ["users"] },
       });
       logger.logMessageResponseSent(message, Date.now() - startTime, {
         "message.response.type": "text",
