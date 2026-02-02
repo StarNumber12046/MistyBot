@@ -12,7 +12,7 @@ import {
 export interface CommandType {
   data: SlashCommandBuilder;
   execute: (interaction: Interaction) => void;
-  autocomplete: (interaction: Interaction) => void;
+  autocomplete?: (interaction: Interaction) => void;
 }
 
 export interface GuessGame {
