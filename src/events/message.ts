@@ -99,6 +99,14 @@ export default {
       return;
     }
 
+    const isChannelBlacklisted = await redis.get(
+      `channel_blacklist:${message.guildId}:${message.channelId}`,
+    );
+    if (isChannelBlacklisted) {
+      logger.logMessageIgnored(message, "channel is blacklisted");
+      return;
+    }
+
     const { success, reset, remaining, limit } = await ratelimit.limit(
       message.author.id,
       { rate: 2 },

@@ -4,8 +4,6 @@ import {
   MessageFlags,
   SlashCommandBuilder,
   SlashCommandSubcommandBuilder,
-  User,
-  Channel,
   ChannelType,
 } from "discord.js";
 import { redis } from "./redis.js";
@@ -15,7 +13,7 @@ import { redis } from "./redis.js";
  */
 export interface ListManagerConfig {
   /** Redis key prefix (e.g., "blacklist", "scrutiny") */
-  prefix: string;
+  prefix: (interaction: ChatInputCommandInteraction) => string;
   /** Display name for the list (e.g., "blacklist", "scrutiny list") */
   displayName: string;
   /** Title for the list embed (e.g., "Blacklist", "Scrutinized users") */
@@ -38,7 +36,7 @@ export function createListManager(config: ListManagerConfig) {
   };
 
   const getItemId = (item: any) => item.id;
-  
+
   const getItemName = (item: any) => {
     if (itemType === "channel") return item.name || item.id;
     return item.tag; // User
@@ -57,7 +55,7 @@ export function createListManager(config: ListManagerConfig) {
         });
         return;
       }
-      await redis.set(`${prefix}:${getItemId(item)}`, "true");
+      await redis.set(`${prefix(interaction)}:${getItemId(item)}`, "true");
       await interaction.reply({
         content: `Added ${getItemName(item)} to the ${displayName}`,
         flags: MessageFlags.Ephemeral,
@@ -76,7 +74,7 @@ export function createListManager(config: ListManagerConfig) {
         });
         return;
       }
-      await redis.del(`${prefix}:${getItemId(item)}`);
+      await redis.del(`${prefix(interaction)}:${getItemId(item)}`);
       await interaction.reply({
         content: `Removed ${getItemName(item)} from the ${displayName}`,
         flags: MessageFlags.Ephemeral,
@@ -87,12 +85,12 @@ export function createListManager(config: ListManagerConfig) {
      * Lists all items in the list
      */
     async list(interaction: ChatInputCommandInteraction) {
-      const keys = await redis.keys(`${prefix}:*`);
+      const keys = await redis.keys(`${prefix(interaction)}:*`);
       const itemList = keys.map((key) => {
-          const id = key.split(":")[1];
-          return itemType === "channel" ? `<#${id}>` : `<@${id}>`;
+        const id = key.split(":").at(-1);
+        return itemType === "channel" ? `<#${id}>` : `<@${id}>`;
       });
-      
+
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
@@ -119,7 +117,9 @@ export function createListManager(config: ListManagerConfig) {
         });
         return;
       }
-      const isInList = await redis.get(`${prefix}:${getItemId(item)}`);
+      const isInList = await redis.get(
+        `${prefix(interaction)}:${getItemId(item)}`,
+      );
       if (isInList) {
         await interaction.reply({
           content: `${getItemName(item)} is on the ${displayName}`,
@@ -166,33 +166,37 @@ export function createListManager(config: ListManagerConfig) {
 export function addListManagementSubcommands(
   builder: SlashCommandBuilder,
   listName: string,
-  itemType: "user" | "channel" = "user"
+  itemType: "user" | "channel" = "user",
 ) {
-  const addOption = (subcommand: SlashCommandSubcommandBuilder, description: string) => {
+  const addOption = (
+    subcommand: SlashCommandSubcommandBuilder,
+    description: string,
+  ) => {
     if (itemType === "channel") {
       return subcommand.addChannelOption((option) =>
         option
           .setName("channel")
           .setDescription(description)
           .setRequired(true)
-          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice)
+          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice),
       );
     }
     return subcommand.addUserOption((option) =>
-      option
-        .setName("user")
-        .setDescription(description)
-        .setRequired(true)
+      option.setName("user").setDescription(description).setRequired(true),
     );
   };
 
   return builder
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) => {
-      subcommand.setName("add").setDescription(`Adds a ${itemType} to the ${listName}`);
+      subcommand
+        .setName("add")
+        .setDescription(`Adds a ${itemType} to the ${listName}`);
       return addOption(subcommand, `The ${itemType} to add`);
     })
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) => {
-      subcommand.setName("remove").setDescription(`Removes a ${itemType} from the ${listName}`);
+      subcommand
+        .setName("remove")
+        .setDescription(`Removes a ${itemType} from the ${listName}`);
       return addOption(subcommand, `The ${itemType} to remove`);
     })
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) =>
@@ -201,7 +205,9 @@ export function addListManagementSubcommands(
         .setDescription(`Lists all ${itemType}s on the ${listName}`),
     )
     .addSubcommand((subcommand: SlashCommandSubcommandBuilder) => {
-      subcommand.setName("query").setDescription(`Gets info about a ${itemType} on the ${listName}`);
+      subcommand
+        .setName("query")
+        .setDescription(`Gets info about a ${itemType} on the ${listName}`);
       return addOption(subcommand, `The ${itemType} to query`);
     });
 }
