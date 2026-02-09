@@ -60,7 +60,7 @@ for (const folder of commandFolders) {
   const commandsPath = path.join(commandsFoldersPath, folder);
   const commandFiles = fs
     .readdirSync(commandsPath)
-    .filter((file) => file.endsWith(".js") || file.endsWith(""));
+    .filter((file) => file.endsWith(".js") || file.endsWith(".ts") || file.endsWith(""));
   for (const file of commandFiles) {
     const filePath = new URL("file://" + path.join(commandsPath, file));
     const command = (await import(filePath.toString())).default as CommandType;
