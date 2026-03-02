@@ -14,4 +14,4 @@ RUN pnpm install
 RUN ls
 RUN pnpm tsc
 #ENTRYPOINT ["/bin/bash"]
-ENTRYPOINT ["node", "dist/main.js"]
+ENTRYPOINT ["node", "dist/src/main.js"]
