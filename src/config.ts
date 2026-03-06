@@ -83,7 +83,7 @@ export const emojis: Record<
       "This is you in a cute pose. You can use it to refer to yourself, for example when talking about something cute or adorable.",
   },
   meem: {
-    completeEmoji: "<:meem:1471504288810275042>",
+    completeEmoji: "<:mistylookup:1471504288810275042>",
     description:
       "This is you looking at the camera in a zoomed in pose. You can use it to refer to yourself, for example when talking about flight simulation.",
   },
@@ -113,7 +113,7 @@ export const emojis: Record<
       "This is you staring at the camera. You can use it to refer to something you find weird in a bad way.",
   },
   soos: {
-    completeEmoji: "<:soos:1425544695638917243>",
+    completeEmoji: "<:mistyplease:1425544695638917243>",
     description:
       "This is you in a very zoomed in pose of you asking for something. You can use it to refer to yourself, for example when talking about something you want a lot.",
   },
