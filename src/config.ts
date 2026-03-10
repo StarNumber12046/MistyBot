@@ -2,6 +2,9 @@ import { createGroq } from "@ai-sdk/groq";
 import { createCerebras } from "@ai-sdk/cerebras";
 import { createVertex } from "@ai-sdk/google-vertex";
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { createAiGateway } from "ai-gateway-provider";
+import { createUnified } from "ai-gateway-provider/providers/unified";
+
 const groqClient = createGroq({
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -17,6 +20,14 @@ const vertexClient = createVertex({
 const bedrockClient = createAmazonBedrock({
   apiKey: process.env.BEDROCK_API_KEY,
 });
+
+const aigateway = createAiGateway({
+  accountId: process.env.CLOUDFLARE_GATEWAY_ID ?? "",
+  gateway: process.env.CLOUDFLARE_GATEWAY ?? "",
+  apiKey: process.env.CLOUDFLARE_GATEWAY_KEY ?? "",
+});
+
+const unified = createUnified();
 
 export const IMAGES_URL = "https://starnumber.vercel.app/misty";
 
@@ -37,6 +48,16 @@ export const MODELS = {
   "Kimi K2 (groq)": groqClient("moonshotai/kimi-k2-instruct-0905"),
   "GPT-OSS (groq)": groqClient("openai/gpt-oss-120b"),
   "Qwen-3 (groq)": groqClient("qwen/qwen3-32b"),
+  "LLama 3 (groq)": groqClient("llama-3.3-70b-versatile"),
+  "LLama 2-16 (cloudflare)": aigateway(
+    unified("workers-ai/@cf/meta/llama-2-7b-chat-fp16"),
+  ),
+  "LLama 2-8 (cloudflare)": aigateway(
+    unified("workers-ai/@cf/meta/llama-2-7b-chat-int8"),
+  ),
+  "LLama 2-lora (cloudflare)": aigateway(
+    unified("workers-ai/@cf/meta-llama/llama-2-7b-chat-hf-lora"),
+  ),
 };
 
 export const DEFAULT_MODEL = "Kimi K2 (groq)";

@@ -29,6 +29,7 @@ export default {
     const { remaining, reset } = await ratelimit.getRemaining(user.id);
     const blacklisted = await redis.get(`blacklist:${user.id}`);
     const preferredModel = await redis.get(`user:${user.id}:model`);
+    const overrideModel = await redis.get(`user:${user.id}:overrideModel`);
     await interaction.reply({
       content: `${
         user.tag
@@ -36,7 +37,7 @@ export default {
         reset / 1000,
       )}:R>\nIs blacklisted: ${
         blacklisted ? " true" : " false"
-      }\nPreferred model: ${preferredModel ?? "default"}`,
+      }\nPreferred model: ${preferredModel ?? "default"}\nOverride model: ${overrideModel ?? "none"}`,
       flags: MessageFlags.Ephemeral,
     });
   },

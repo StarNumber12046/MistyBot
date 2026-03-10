@@ -1,7 +1,7 @@
 import { withTracing } from "@posthog/ai";
 import { generateText } from "ai";
 import { type GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
-import { basePrompt } from "./config.js";
+import { basePrompt, MODELS } from "./config.js";
 import { User, type Message } from "discord.js";
 import type { ClientType } from "./types.js";
 import { posthogClient, eventTypes, buildUserMetadata } from "./analytics.js";
@@ -31,7 +31,13 @@ export async function genMistyOutput(
   latestMessage: Message,
 ) {
   const startTime = Date.now();
-  const userModel = await getUserPreferredModel(latestMessage.author);
+  const overrideModel = (await redis.get(
+    `user:${latestMessage.author.id}:overrideModel`,
+  )) as keyof typeof MODELS | undefined;
+
+  const userModel = overrideModel
+    ? MODELS[overrideModel]
+    : await getUserPreferredModel(latestMessage.author);
   const modelName = userModel.modelId;
 
   logger.logAIGenerationStart(latestMessage.author.id, modelName, {
