@@ -40,6 +40,7 @@ export const MODELS = {
   "Claude Sonnet 4 (bedrock)": bedrockClient(
     "global.anthropic.claude-sonnet-4-20250514-v1:0",
   ),
+  "Nova Micro (bedrock)": bedrockClient("eu.amazon.nova-micro-v1:0"),
   "Kimi K2.5 (bedrock)": bedrockClient("moonshotai.kimi-k2.5"),
   "Deepseek r1 (bedrock)": bedrockClient("deepseek.v3-v1:0"),
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
