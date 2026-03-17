@@ -54,7 +54,7 @@
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.7",
     "flightradarapi": "^1.4.0",
-    "music-metadata": "^11.12.1",
+    "music-metadata": "^11.12.3",
     "node-id3": "^0.2.9",
     "posthog-node": "^5.24.17",
     "uploadthing": "^7.7.4",
