@@ -46,7 +46,6 @@ export const MODELS = {
   "GPT-OSS (cerebras)": cerebrasClient("gpt-oss-120b"),
   "GLM 4.6 (cerebras)": cerebrasClient("zai-glm-4.6"),
   "Qwen-3 (cerebras)": cerebrasClient("qwen-3-235b-a22b-instruct-2507"),
-  "Kimi K2 (groq)": groqClient("moonshotai/kimi-k2-instruct-0905"),
   "GPT-OSS (groq)": groqClient("openai/gpt-oss-120b"),
   "Qwen-3 (groq)": groqClient("qwen/qwen3-32b"),
   "LLama 3 (groq)": groqClient("llama-3.3-70b-versatile"),
@@ -61,7 +60,7 @@ export const MODELS = {
   ),
 };
 
-export const DEFAULT_MODEL = "Kimi K2 (groq)";
+export const DEFAULT_MODEL = "GPT-OSS (cerebras)";
 
 export const MODERATION_MODEL = groqClient("openai/gpt-oss-safeguard-20b");
 
