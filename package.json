@@ -52,7 +52,7 @@
     "cheerio": "^1.2.0",
     "discord.js": "^14.25.1",
     "dotenv": "^16.6.1",
-    "drizzle-orm": "^0.44.7",
+    "drizzle-orm": "^0.45.2",
     "flightradarapi": "^1.4.0",
     "music-metadata": "^11.12.3",
     "node-id3": "^0.2.9",
