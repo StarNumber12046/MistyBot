@@ -60,7 +60,7 @@ export const MODELS = {
   ),
 };
 
-export const DEFAULT_MODEL = "GPT-OSS (cerebras)";
+export const DEFAULT_MODEL = "GPT-OSS (groq)";
 
 export const MODERATION_MODEL = groqClient("openai/gpt-oss-safeguard-20b");
 
